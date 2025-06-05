@@ -1,4 +1,4 @@
-# PadraigAIO Plugin
+# Coin Creation Plugin
 
 **Enhanced Solana token creation and trading directly from Discord**
 

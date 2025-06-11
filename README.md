@@ -1,3 +1,7 @@
+<div align="center">
+
+![PadraigAIO Banner](./assets/padraig-banner.png)
+
 # PadraigAIO
 
 **Enhanced Solana token creation and trading directly from Discord**
@@ -7,6 +11,8 @@ PadraigAIO is a comprehensive Discord/Vencord plugin that enables seamless creat
 ![Plugin Interface](https://img.shields.io/badge/Platform-Discord%20%2F%20Vencord-5865F2)
 ![Solana](https://img.shields.io/badge/Blockchain-Solana-9945FF)
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-green)
+
+</div>
 
 ---
 
@@ -47,85 +53,149 @@ PadraigAIO is a comprehensive Discord/Vencord plugin that enables seamless creat
 
 ## 🔧 Installation
 
-> **Note**: This is a development plugin for Vencord that must be installed in the `userplugins` folder. It cannot be installed as a regular plugin.
+> **Important**: This is a development plugin for Vencord that must be installed in the `userplugins` folder. You **cannot** use the regular Vencord installer - you must build Vencord from source for development plugins to work.
 
 ### Development Installation
 
 #### Prerequisites
 ```bash
 # Ensure you have the required tools
-node --version  # Should be v16+
-pnpm --version  # Should be v8+
+node --version  # Should be v18+ (Node 16+ supported)
+pnpm --version  # Should be v8+ (recommended) or npm/yarn
 git --version   # Any recent version
 ```
 
-#### Step 1: Install Vencord
-If you don't have Vencord installed:
+**Required Dependencies for Solana Integration:**
+- `@solana/web3.js` - Solana blockchain interaction
+- `bs58` - Base58 encoding/decoding for Solana addresses
+
+#### Step 1: Clone and Setup Vencord (Development)
 ```bash
-# Download and install Vencord
-# Visit: https://vencord.dev/download
-# Follow the installation guide for your platform
+# Clone Vencord repository
+git clone https://github.com/Vendicated/Vencord.git
+cd Vencord
+
+# Install Vencord dependencies
+pnpm install
+
+# Install required dependencies for Solana plugins
+pnpm add @solana/web3.js bs58
+
+# Create the userplugins directory in src folder
+mkdir -p src/userplugins
 ```
 
-#### Step 2: Clone to UserPlugins Directory
+> **Note**: The Vencord installer from vencord.dev **will not work** for user plugins. You must build from source.
+
+#### Step 2: Clone PadraigAIO Plugin
 ```bash
-# Navigate to Vencord's userplugins directory
-# Windows
-cd "%APPDATA%\Vencord\settings\userplugins"
+# Navigate to the userplugins directory (inside Vencord/src/)
+cd src/userplugins
 
-# macOS  
-cd "~/Library/Application Support/Vencord/settings/userplugins"
-
-# Linux
-cd "~/.config/Vencord/settings/userplugins"
-
-# Clone the repository
+# Clone the PadraigAIO plugin
 git clone https://github.com/giardap/padraigaio.git PadraigAIO
 cd PadraigAIO
 ```
 
-#### Step 3: Install Dependencies and Build
+#### Step 3: Install Plugin Dependencies and Build
 ```bash
-# Install dependencies with pnpm
+# Install plugin dependencies (if any additional ones needed)
 pnpm install
 
-# Build the plugin
+# Build Vencord with the new plugin
+cd ../../  # Go back to Vencord root directory
 pnpm build
 
-# Inject into Vencord (applies changes without restart)
+# Inject Vencord into Discord
 pnpm inject
 ```
 
-#### Step 4: Enable Plugin
-1. Open Discord
-2. Navigate to `Settings` → `Vencord` → `Plugins`
-3. Find "PadraigAIO" in the user plugins section
-4. Toggle it **ON**
+#### Step 4: Enable Plugin in Discord
+1. **Restart Discord completely** (important for new plugins)
+2. Open Discord
+3. Navigate to `Settings` → `Vencord` → `Plugins`
+4. Find "PadraigAIO" and toggle it **ON**
 
 ### Development Workflow
 
-#### Making Changes
+#### Making Changes to PadraigAIO
 ```bash
-# After making code changes, rebuild and inject
+# After making code changes to the plugin
+cd /path/to/Vencord/src/userplugins/PadraigAIO
+
+# Go back to Vencord root and rebuild
+cd ../../../  # Go back to Vencord root directory
+pnpm build
+
+# Re-inject Vencord to apply changes
+pnpm inject
+```
+
+#### Live Development Mode
+```bash
+# For active development, rebuild Vencord after changes
+cd /path/to/Vencord
 pnpm build && pnpm inject
 ```
 
-#### Live Development
+#### Updating the Plugin
 ```bash
-# For active development with auto-rebuild
-pnpm dev
-```
-
-#### Updating Plugin
-```bash
-# Pull latest changes
+# Pull latest changes (in plugin directory)
+cd /path/to/Vencord/src/userplugins/PadraigAIO
 git pull origin main
 
-# Reinstall dependencies if needed
+# Go back to Vencord root and rebuild
+cd ../../../
+pnpm build
+pnpm inject
+```
+
+#### Updating Vencord
+```bash
+# Update Vencord itself (in Vencord directory)
+cd /path/to/Vencord
+git pull origin main
 pnpm install
 
-# Rebuild and inject
-pnpm build && pnpm inject
+# Reinstall Solana dependencies if needed
+pnpm add @solana/web3.js bs58
+
+pnpm build
+pnpm inject
+```
+
+### Troubleshooting Installation
+
+#### Plugin Not Appearing
+```
+Problem: PadraigAIO doesn't show up in plugins list
+Solutions:
+1. Ensure you're using built Vencord, not installer version
+2. Check plugin is in Vencord/src/userplugins/PadraigAIO/
+3. Verify Vencord built successfully (pnpm build from root)
+4. Restart Discord completely
+5. Re-inject Vencord (pnpm inject from Vencord root)
+```
+
+#### Build Errors
+```
+Problem: Vencord build fails
+Solutions:
+1. Check Node.js version (18+ recommended)
+2. Ensure Solana dependencies installed: pnpm add @solana/web3.js bs58
+3. Clear node_modules and reinstall: rm -rf node_modules && pnpm install
+4. Check for TypeScript errors in plugin code
+5. Verify plugin is in correct src/userplugins/ directory
+```
+
+#### Vencord Injection Issues
+```
+Problem: Vencord injection fails
+Solutions:
+1. Close Discord completely before injecting
+2. Run as administrator/sudo if needed
+3. Disable antivirus temporarily during injection
+4. Check Discord app integrity
 ```
 
 ---
@@ -346,10 +416,11 @@ Access via Discord Settings → Vencord → Plugins → PadraigAIO:
 ```
 Problem: Plugin doesn't appear in Discord
 Solution:
-1. Ensure Vencord is properly installed
-2. Check plugin is in correct userplugins folder
-3. Restart Discord completely
-4. Verify plugin files are not corrupted
+1. Ensure you built Vencord from source (not installer)
+2. Check plugin is in Vencord/src/userplugins/PadraigAIO/
+3. Verify Vencord built successfully from root directory
+4. Restart Discord completely
+5. Re-inject Vencord from root directory
 ```
 
 #### Upload Failures

@@ -80,7 +80,7 @@ cd "~/Library/Application Support/Vencord/settings/userplugins"
 cd "~/.config/Vencord/settings/userplugins"
 
 # Clone the repository
-git clone https://github.com/yourusername/padraigaio-plugin.git PadraigAIO
+git clone https://github.com/giardap/padraigaio.git PadraigAIO
 cd PadraigAIO
 ```
 

@@ -452,10 +452,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **GitHub Issues**: [Report bugs and request features](https://github.com/yourusername/padraigaio-plugin/issues)
-- **Discord Server**: [Join our community](https://discord.gg/your-invite-code)
-- **Documentation**: [Comprehensive guides and API docs](https://padraigaio.dev/docs)
-- **Email**: support@padraigaio.dev
+- **GitHub Issues**: [Report bugs and request features](https://github.com/giardap/padraigaio/issues)
+- **Discord Server**: [Join our community](https://discord.gg/cgExEhGrGJ)
+- **Email**: wrecktivity@proton.me
 
 ---
 

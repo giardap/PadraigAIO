@@ -1,4 +1,4 @@
-# Coin Creation Plugin
+# PadraigAIO
 
 **Enhanced Solana token creation and trading directly from Discord**
 
@@ -42,6 +42,91 @@ PadraigAIO is a comprehensive Discord/Vencord plugin that enables seamless creat
 - **Preset Configurations**: Conservative, Balanced, and Aggressive presets
 - **Quick Action Customization**: Personalize buy amounts and sell percentages
 - **MEV Protection**: Optional Jito bundle routing for transaction protection
+
+---
+
+## 🔧 Installation
+
+> **Note**: This is a development plugin for Vencord that must be installed in the `userplugins` folder. It cannot be installed as a regular plugin.
+
+### Development Installation
+
+#### Prerequisites
+```bash
+# Ensure you have the required tools
+node --version  # Should be v16+
+pnpm --version  # Should be v8+
+git --version   # Any recent version
+```
+
+#### Step 1: Install Vencord
+If you don't have Vencord installed:
+```bash
+# Download and install Vencord
+# Visit: https://vencord.dev/download
+# Follow the installation guide for your platform
+```
+
+#### Step 2: Clone to UserPlugins Directory
+```bash
+# Navigate to Vencord's userplugins directory
+# Windows
+cd "%APPDATA%\Vencord\settings\userplugins"
+
+# macOS  
+cd "~/Library/Application Support/Vencord/settings/userplugins"
+
+# Linux
+cd "~/.config/Vencord/settings/userplugins"
+
+# Clone the repository
+git clone https://github.com/yourusername/padraigaio-plugin.git PadraigAIO
+cd PadraigAIO
+```
+
+#### Step 3: Install Dependencies and Build
+```bash
+# Install dependencies with pnpm
+pnpm install
+
+# Build the plugin
+pnpm build
+
+# Inject into Vencord (applies changes without restart)
+pnpm inject
+```
+
+#### Step 4: Enable Plugin
+1. Open Discord
+2. Navigate to `Settings` → `Vencord` → `Plugins`
+3. Find "PadraigAIO" in the user plugins section
+4. Toggle it **ON**
+
+### Development Workflow
+
+#### Making Changes
+```bash
+# After making code changes, rebuild and inject
+pnpm build && pnpm inject
+```
+
+#### Live Development
+```bash
+# For active development with auto-rebuild
+pnpm dev
+```
+
+#### Updating Plugin
+```bash
+# Pull latest changes
+git pull origin main
+
+# Reinstall dependencies if needed
+pnpm install
+
+# Rebuild and inject
+pnpm build && pnpm inject
+```
 
 ---
 
@@ -114,6 +199,46 @@ The plugin adds a persistent toolbar to Discord with four main components:
 - **Pool Selection**: Auto-routing or manual exchange selection
 - **Transaction Options**: Skip preflight checks for faster execution
 - **MEV Protection**: Jito-only routing for large trades
+
+---
+
+## ⚙️ Configuration
+
+### Initial Setup
+
+1. **First Launch**:
+   - Plugin will automatically initialize storage
+   - Create your first wallet or import existing one
+   - Set up default configurations
+
+2. **Wallet Configuration**:
+   ```typescript
+   // The plugin supports multiple wallet formats
+   interface Wallet {
+     id: string;
+     name: string;
+     publicKey?: string;
+     privateKey?: string;  // Encrypted locally
+     apiKey?: string;      // For advanced features
+     createdAt: string;
+     updatedAt: string;
+   }
+   ```
+
+3. **Storage Settings**:
+   - **Database**: IndexedDB (local, encrypted)
+   - **Cache Size**: Configurable (default: 100MB)
+   - **Auto-cleanup**: Old uploads cleaned after 30 days
+
+### Plugin Settings
+
+Access via Discord Settings → Vencord → Plugins → PadraigAIO:
+
+- **Default Wallet**: Set primary wallet for operations
+- **Auto-retry**: Enable automatic retry on failed uploads
+- **Debug Mode**: Enable detailed logging
+- **Image Cache**: Configure caching behavior
+- **Network Settings**: RPC endpoints and timeouts
 
 ---
 
@@ -213,6 +338,61 @@ The plugin adds a persistent toolbar to Discord with four main components:
 
 ---
 
+## 🔍 Troubleshooting
+
+### Common Issues
+
+#### Plugin Not Loading
+```
+Problem: Plugin doesn't appear in Discord
+Solution:
+1. Ensure Vencord is properly installed
+2. Check plugin is in correct userplugins folder
+3. Restart Discord completely
+4. Verify plugin files are not corrupted
+```
+
+#### Upload Failures
+```
+Problem: IPFS uploads fail consistently
+Solutions:
+1. Check internet connection
+2. Verify image file is valid
+3. Try smaller image size (< 10MB)
+4. Clear plugin cache
+5. Update to latest plugin version
+```
+
+#### Wallet Issues
+```
+Problem: Cannot access stored wallets
+Solutions:
+1. Check IndexedDB permissions
+2. Clear browser cache
+3. Re-import wallets
+4. Check for storage quota limits
+```
+
+#### Discord Integration Problems
+```
+Problem: Commands not working
+Solutions:
+1. Re-enable plugin in Vencord settings
+2. Check Discord permissions
+3. Update Vencord to latest version
+4. Clear Discord cache
+```
+
+### Debug Mode
+
+Enable debug mode for detailed logging:
+1. Settings → Vencord → Plugins → PadraigAIO
+2. Enable "Debug Mode"
+3. Open Developer Console (Ctrl+Shift+I)
+4. Check console for detailed error messages
+
+---
+
 ## 📊 Technical Specifications
 
 ### Supported Networks
@@ -234,7 +414,7 @@ The plugin adds a persistent toolbar to Discord with four main components:
 
 ---
 
-## 🏆 What Makes PumpPortal Special
+## 🏆 What Makes PadraigAIO Special
 
 ### Intelligence
 - **Context Awareness**: Understands Discord message content and context
@@ -258,4 +438,27 @@ The plugin adds a persistent toolbar to Discord with four main components:
 
 ---
 
-*Built with ❤️ for the Solana and Discord communities*
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Vencord Team**: For the excellent Discord modification framework
+- **Solana Foundation**: For the robust blockchain infrastructure
+- **pump.fun**: For providing the token creation platform
+- **Discord**: For the platform that makes this all possible
+- **Community**: For feedback, bug reports, and feature requests
+
+## 📞 Support
+
+- **GitHub Issues**: [Report bugs and request features](https://github.com/yourusername/padraigaio-plugin/issues)
+- **Discord Server**: [Join our community](https://discord.gg/your-invite-code)
+- **Documentation**: [Comprehensive guides and API docs](https://padraigaio.dev/docs)
+- **Email**: support@padraigaio.dev
+
+---
+
+**Built with ❤️ for the Solana and Discord communities**
+
+*Empowering creators to build the future of decentralized finance, one token at a time.*

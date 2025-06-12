@@ -75,6 +75,7 @@ export function CoinModal(props: any) {
     const [coinName, setCoinName] = React.useState("");
     const [symbol, setSymbol] = React.useState("");
     const [description, setDescription] = React.useState("");
+    const [autoGenerateSymbol, setAutoGenerateSymbol] = React.useState(true);
     const [image, setImage] = React.useState<File | null>(null);
     const [imagePreview, setImagePreview] = React.useState<string | null>(null);
     const [selectedImageUrl, setSelectedImageUrl] = React.useState<string>("");
@@ -83,6 +84,8 @@ export function CoinModal(props: any) {
     const [walletBalances, setWalletBalances] = React.useState<Record<string, number>>({});
     const [loadingBalances, setLoadingBalances] = React.useState<Record<string, boolean>>({});
     const [loading, setLoading] = React.useState(false);
+    const [loadingStage, setLoadingStage] = React.useState<string>("");
+    const [loadingProgress, setLoadingProgress] = React.useState(0);
     const [response, setResponse] = React.useState<string | null>(null);
     
     // Enhanced storage state
@@ -91,12 +94,73 @@ export function CoinModal(props: any) {
     const [uploadHistory, setUploadHistory] = React.useState<any[]>([]);
     const [imageOptimized, setImageOptimized] = React.useState(false);
 
-    // NEW: Get dev buy amount from global settings and allow manual override
+    // Use dev buy amount from global settings only
     const globalSettings = getGlobalTradingSettings();
-    const [buyAmount, setBuyAmount] = React.useState(globalSettings.devBuyAmount || "0.1");
-    const [useCustomBuyAmount, setUseCustomBuyAmount] = React.useState(false);
+    const buyAmount = globalSettings.devBuyAmount || "0.1";
 
-    // Load wallets from enhanced storage and set default
+    // Smart symbol generation function
+    const generateSmartSymbol = (name: string): string => {
+        if (!name) return "";
+        
+        // Remove common words and clean the name
+        const cleanName = name
+            .toLowerCase()
+            .replace(/\b(token|coin|crypto|the|a|an)\b/g, '') // Remove common words
+            .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special characters
+            .trim();
+        
+        // Try different strategies based on name length and structure
+        if (cleanName.length <= 3) {
+            // Short names: just uppercase
+            return cleanName.toUpperCase();
+        } else if (cleanName.includes(' ')) {
+            // Multi-word: take first letter of each word (max 5 letters)
+            return cleanName
+                .split(' ')
+                .filter(word => word.length > 0)
+                .map(word => word[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 5);
+        } else {
+            // Single word: take first 3-4 letters, or use common patterns
+            if (cleanName.length <= 6) {
+                return cleanName.toUpperCase();
+            } else {
+                // For longer words, try to find a good abbreviation
+                const vowels = 'aeiou';
+                let result = cleanName[0]; // Always include first letter
+                
+                // Add consonants first, then vowels if needed
+                for (let i = 1; i < cleanName.length && result.length < 4; i++) {
+                    if (!vowels.includes(cleanName[i])) {
+                        result += cleanName[i];
+                    }
+                }
+                
+                // If still too short, add vowels
+                if (result.length < 3) {
+                    for (let i = 1; i < cleanName.length && result.length < 4; i++) {
+                        if (vowels.includes(cleanName[i]) && !result.includes(cleanName[i])) {
+                            result += cleanName[i];
+                        }
+                    }
+                }
+                
+                return result.toUpperCase();
+            }
+        }
+    };
+
+    // Auto-generate symbol when name changes
+    React.useEffect(() => {
+        if (autoGenerateSymbol && coinName.trim()) {
+            const generatedSymbol = generateSmartSymbol(coinName);
+            setSymbol(generatedSymbol);
+        }
+    }, [coinName, autoGenerateSymbol]);
+
+    // Load wallets from enhanced storage and auto-select default
     React.useEffect(() => {
         const loadWalletsAndDefault = async () => {
             console.log("[CoinModal] Loading wallets and default setting...");
@@ -105,15 +169,15 @@ export function CoinModal(props: any) {
                 console.log("[CoinModal] Loaded wallets from IndexedDB:", storedWallets.length);
                 setWallets(storedWallets);
 
-                // Load default wallet setting
+                // Auto-select default wallet - no user interaction needed
                 const defaultWalletId = await getDefaultWallet();
                 if (defaultWalletId && storedWallets.find(w => w.id === defaultWalletId)) {
                     setSelectedWallet(defaultWalletId);
-                    console.log("[CoinModal] Default wallet loaded:", defaultWalletId);
+                    console.log("[CoinModal] Default wallet auto-selected:", defaultWalletId);
                 } else if (storedWallets.length > 0) {
                     // If no default set but wallets exist, use first wallet
                     setSelectedWallet(storedWallets[0].id);
-                    console.log("[CoinModal] No default, using first wallet:", storedWallets[0].name);
+                    console.log("[CoinModal] No default, auto-selecting first wallet:", storedWallets[0].name);
                 }
             } catch (error) {
                 console.error("[CoinModal] Failed to load wallets:", error);
@@ -123,13 +187,6 @@ export function CoinModal(props: any) {
         loadWalletsAndDefault();
     }, []);
 
-    // NEW: Update buy amount when global settings change
-    React.useEffect(() => {
-        if (!useCustomBuyAmount) {
-            const currentSettings = getGlobalTradingSettings();
-            setBuyAmount(currentSettings.devBuyAmount || "0.1");
-        }
-    }, [useCustomBuyAmount]);
 
     // Load storage info and upload history
     React.useEffect(() => {
@@ -328,10 +385,6 @@ export function CoinModal(props: any) {
     };
 
     // NEW: Handle quick buy amount presets
-    const handleQuickBuyAmount = (amount: string) => {
-        setBuyAmount(amount);
-        setUseCustomBuyAmount(true);
-    };
 
     // Enhanced submit with integrated working IPFS upload logic
     const submit = async () => {
@@ -483,7 +536,7 @@ export function CoinModal(props: any) {
                 linkValid: linkStr !== "https://pumpportal.fun",
                 approach: "integrated-working-upload",
                 devBuyAmount: buyAmount,
-                useCustomAmount: useCustomBuyAmount
+                useCustomAmount: false
             });
 
             // Record upload attempt
@@ -532,7 +585,7 @@ export function CoinModal(props: any) {
                     });
 
                     console.log("[CoinModal] ✅ Integrated IPFS Upload successful! URI:", result.metadataUri);
-                    setResponse(`✅ Image uploaded to IPFS successfully!\n💰 Creating token with ${buyAmount} SOL dev buy${useCustomBuyAmount ? ' (custom)' : ' (from settings)'}...`);
+                    setResponse(`✅ Image uploaded to IPFS successfully!\n💰 Creating token with ${buyAmount} SOL dev buy (from settings)...`);
 
                     // Continue with token creation...
                     const requestBody = {
@@ -595,7 +648,7 @@ export function CoinModal(props: any) {
 Method: ${uploadMethod} (${imageOptimized ? 'optimized' : 'original'})
 IPFS: ${result.metadataUri}
 Wallet: ${selectedWalletObj.name}
-Dev Buy: ${buyAmount} SOL ${useCustomBuyAmount ? '(custom amount)' : '(from global settings)'}
+Dev Buy: ${buyAmount} SOL (from global settings)
 Transaction:`);
                             
                             // Add clickable transaction link
@@ -651,7 +704,7 @@ Transaction:`);
 
                     } catch (corsError: any) {
                         console.log("[CoinModal] Browser trade request failed:", corsError.message);
-                        setResponse(`✅ IPFS upload successful!\n❌ Token creation blocked by CORS\n\n💡 Metadata uploaded successfully to IPFS. You can create the token manually using the URI.\n\nDev Buy Amount: ${buyAmount} SOL ${useCustomBuyAmount ? '(custom)' : '(from settings)'}`);
+                        setResponse(`✅ IPFS upload successful!\n❌ Token creation blocked by CORS\n\n💡 Metadata uploaded successfully to IPFS. You can create the token manually using the URI.\n\nDev Buy Amount: ${buyAmount} SOL (from settings)`);
                     }
 
                 } else {
@@ -682,15 +735,15 @@ Transaction:`);
             
             // Enhanced error messages with integrated upload info
             if (e.message && e.message.includes('Invalid URL')) {
-                setResponse(`🔗 Invalid URL detected.\n\n💡 Attempted optimizations:\n• Storage check: ${usingCachedImage ? '✅ Found' : '❌ Not cached'}\n• URL validation: ${selectedImageUrl ? 'Failed' : 'N/A'}\n• Link validation: ${linkStr !== "https://pumpportal.fun" ? '✅ Valid' : '❌ Fallback used'}\n• Dev Buy: ${buyAmount} SOL ${useCustomBuyAmount ? '(custom)' : '(settings)'}\n\n🔧 Try a different image or use direct upload.`);
+                setResponse(`🔗 Invalid URL detected.\n\n💡 Attempted optimizations:\n• Storage check: ${usingCachedImage ? '✅ Found' : '❌ Not cached'}\n• URL validation: ${selectedImageUrl ? 'Failed' : 'N/A'}\n• Link validation: ${linkStr !== "https://pumpportal.fun" ? '✅ Valid' : '❌ Fallback used'}\n• Dev Buy: ${buyAmount} SOL (from settings)\n\n🔧 Try a different image or use direct upload.`);
             } else if (e.message && e.message.includes('large for bridge transfer')) {
-                setResponse(`📏 Image too large for transfer.\n\n💡 Optimization attempted:\n• Original optimization: ${imageOptimized ? '✅ Applied' : '❌ Not needed'}\n• Final size: ${imageUrl ? (imageUrl.length / 1024).toFixed(1) + 'KB' : 'Unknown'}\n• Dev Buy: ${buyAmount} SOL ${useCustomBuyAmount ? '(custom)' : '(settings)'}\n\n🔧 Try a smaller image or different format.`);
+                setResponse(`📏 Image too large for transfer.\n\n💡 Optimization attempted:\n• Original optimization: ${imageOptimized ? '✅ Applied' : '❌ Not needed'}\n• Final size: ${imageUrl ? (imageUrl.length / 1024).toFixed(1) + 'KB' : 'Unknown'}\n• Dev Buy: ${buyAmount} SOL (from settings)\n\n🔧 Try a smaller image or different format.`);
             } else if (e.message && e.message.includes('Native plugin helpers not available')) {
-                setResponse(`🔧 Plugin not loaded properly.\n\n💡 Available features:\n• IndexedDB: ${typeof indexedDB !== 'undefined' ? '✅ Available' : '❌ Missing'}\n• Cache API: ${typeof caches !== 'undefined' ? '✅ Available' : '❌ Missing'}\n• Dev Buy: ${buyAmount} SOL ${useCustomBuyAmount ? '(custom)' : '(settings)'}\n\n📝 Restart Discord/Vencord and try again.`);
+                setResponse(`🔧 Plugin not loaded properly.\n\n💡 Available features:\n• IndexedDB: ${typeof indexedDB !== 'undefined' ? '✅ Available' : '❌ Missing'}\n• Cache API: ${typeof caches !== 'undefined' ? '✅ Available' : '❌ Missing'}\n• Dev Buy: ${buyAmount} SOL (from settings)\n\n📝 Restart Discord/Vencord and try again.`);
             } else if (e.message && e.message.includes('select a wallet')) {
-                setResponse(`🔑 Wallet Selection Required.\n\n💡 Current state:\n• Wallets available: ${wallets.length}\n• Default wallet: ${selectedWalletObj?.name || 'None set'}\n• API key ready: ${selectedWalletObj?.apiKey ? 'Yes' : 'No'}\n• Dev Buy: ${buyAmount} SOL ${useCustomBuyAmount ? '(custom)' : '(settings)'}\n\n🔧 Please select a wallet with an API key.`);
+                setResponse(`🔑 Wallet Selection Required.\n\n💡 Current state:\n• Wallets available: ${wallets.length}\n• Default wallet: ${selectedWalletObj?.name || 'None set'}\n• API key ready: ${selectedWalletObj?.apiKey ? 'Yes' : 'No'}\n• Dev Buy: ${buyAmount} SOL (from settings)\n\n🔧 Please select a wallet with an API key.`);
             } else {
-                setResponse(`❌ Error: ${e.message}\n\n🔧 Attempted approach:\n• Method: ${uploadMethod}\n• Cached: ${usingCachedImage ? 'Yes' : 'No'}\n• Optimized: ${imageOptimized ? 'Yes' : 'No'}\n• Link valid: ${linkStr !== "https://pumpportal.fun" ? 'Yes' : 'No'}\n• Wallet: ${selectedWalletObj?.name || 'None'}\n• Dev Buy: ${buyAmount} SOL ${useCustomBuyAmount ? '(custom)' : '(settings)'}\n\n📝 Check console for detailed logs.`);
+                setResponse(`❌ Error: ${e.message}\n\n🔧 Attempted approach:\n• Method: ${uploadMethod}\n• Cached: ${usingCachedImage ? 'Yes' : 'No'}\n• Optimized: ${imageOptimized ? 'Yes' : 'No'}\n• Link valid: ${linkStr !== "https://pumpportal.fun" ? 'Yes' : 'No'}\n• Wallet: ${selectedWalletObj?.name || 'None'}\n• Dev Buy: ${buyAmount} SOL (from settings)\n\n📝 Check console for detailed logs.`);
             }
             
             console.log("[CoinModal] Detailed error info:", {
@@ -704,7 +757,7 @@ Transaction:`);
                 optimized: imageOptimized,
                 wallet: selectedWalletObj?.name,
                 devBuyAmount: buyAmount,
-                useCustomAmount: useCustomBuyAmount,
+                useCustomAmount: false,
                 urlValidation: {
                     raw: props.extractedLink,
                     validated: linkStr,
@@ -808,112 +861,59 @@ Transaction:`);
             <ModalContent style={{ padding: "20px 24px" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "20px", alignItems: "flex-start" }}>
                     
-                    {/* Wallet Selection */}
-                    <div style={{ width: "100%" }}>
-                        <label style={labelStyle}>Wallet Selection</label>
-                        
-                        <select
-                            value={selectedWallet}
-                            onChange={(e) => setSelectedWallet(e.target.value)}
-                            style={{
-                                ...inputStyle,
-                                marginBottom: "12px",
-                                outline: "none",
-                                width: "320px"
-                            }}
-                        >
-                            <option value="">-- Select a wallet --</option>
-                            {wallets.map(wallet => (
-                                <option key={wallet.id} value={wallet.id}>
-                                    {wallet.name} {wallet.publicKey ? `(${formatAddress(wallet.publicKey)})` : '(No Public Key)'}
-                                </option>
-                            ))}
-                        </select>
-
-                    {/* Display selected wallet details */}
-                    {selectedWallet && selectedWalletObj && (
-                        <div style={{
-                            backgroundColor: BRAND_COLORS.primaryDark,
-                            padding: "12px",
-                            borderRadius: "8px",
-                            fontSize: "12px",
-                            color: BRAND_COLORS.text
-                        }}>
-                            <div style={{ marginBottom: "8px" }}>
-                                <span style={{ color: BRAND_COLORS.text, fontWeight: "600" }}>
-                                    Wallet: {selectedWalletObj.name}
-                                </span>
-                            </div>
-                            
-                            <div style={{ marginBottom: "8px" }}>
-                                <span style={{ color: BRAND_COLORS.textMuted }}>API Key: </span>
-                                <span style={{ color: selectedWalletObj.apiKey ? BRAND_COLORS.success : BRAND_COLORS.danger }}>
-                                    {selectedWalletObj.apiKey ? "✅ Available" : "❌ Missing"}
-                                </span>
-                            </div>
-                            
-                            {selectedWalletObj.publicKey && (
-                                <div style={{ marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
-                                    <span style={{ color: BRAND_COLORS.textMuted }}>Public Key:</span>
-                                    <code style={{
-                                        backgroundColor: BRAND_COLORS.primary,
-                                        padding: "2px 6px",
-                                        borderRadius: "4px",
-                                        fontSize: "10px",
-                                        color: BRAND_COLORS.text
+                    {/* Simple Wallet Balance Display */}
+                    {selectedWalletObj && (
+                        <div style={{ width: "100%", marginBottom: "16px" }}>
+                            <div style={{
+                                backgroundColor: BRAND_COLORS.primaryDark,
+                                border: `1px solid ${BRAND_COLORS.accent3}`,
+                                borderRadius: "8px",
+                                padding: "12px",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center"
+                            }}>
+                                <div>
+                                    <Text style={{ fontSize: "12px", color: BRAND_COLORS.textMuted }}>
+                                        💼 Wallet Balance
+                                    </Text>
+                                    <Text style={{ 
+                                        fontSize: "16px", 
+                                        fontWeight: "600", 
+                                        color: BRAND_COLORS.text,
+                                        fontFamily: "monospace",
+                                        marginTop: "4px"
                                     }}>
-                                        {formatAddress(selectedWalletObj.publicKey)}
-                                    </code>
-                                    <button
-                                        onClick={() => copyToClipboard(selectedWalletObj.publicKey!)}
-                                        style={{
-                                            background: BRAND_COLORS.accent3,
-                                            color: "white",
-                                            border: "none",
-                                            borderRadius: "3px",
-                                            padding: "2px 6px",
-                                            fontSize: "9px",
-                                            cursor: "pointer"
-                                        }}
-                                    >
-                                        Copy
-                                    </button>
+                                        {loadingBalances[selectedWalletObj.id] ? "Loading..." : `${walletBalances[selectedWalletObj.id]?.toFixed(4) ?? "0.0000"} SOL`}
+                                    </Text>
                                 </div>
-                            )}
-
-                            {selectedWalletObj.publicKey && (
-                                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                    <span style={{ color: BRAND_COLORS.textMuted }}>Balance:</span>
-                                    {loadingBalances[selectedWalletObj.id] ? (
-                                        <span style={{ color: BRAND_COLORS.textMuted }}>Loading...</span>
-                                    ) : (
-                                        <span style={{ 
-                                            color: BRAND_COLORS.text, 
-                                            fontWeight: "600",
-                                            fontFamily: "monospace"
-                                        }}>
-                                            {walletBalances[selectedWalletObj.id]?.toFixed(4) ?? "0.0000"} SOL
-                                        </span>
-                                    )}
+                                <div style={{
+                                    fontSize: "10px",
+                                    color: BRAND_COLORS.success,
+                                    backgroundColor: BRAND_COLORS.success + "20",
+                                    padding: "4px 8px",
+                                    borderRadius: "4px",
+                                    fontWeight: "600"
+                                }}>
+                                    DEFAULT WALLET
                                 </div>
-                            )}
+                            </div>
                         </div>
                     )}
 
-                        {wallets.length === 0 && (
-                            <div style={{
-                                backgroundColor: BRAND_COLORS.warning + "20",
-                                color: BRAND_COLORS.warning,
-                                padding: "8px 12px",
-                                borderRadius: "6px",
-                                fontSize: "12px",
-                                border: `1px solid ${BRAND_COLORS.warning}`,
-                                width: "fit-content"
-                            }}>
-                                💡 No wallets found. Use the Wallet Manager to generate wallets first!
-                            </div>
-                        )}
-                    </div>
+                    {wallets.length === 0 && (
+                        <div style={{
+                            backgroundColor: BRAND_COLORS.warning + "20",
+                            color: BRAND_COLORS.warning,
+                            padding: "8px 12px",
+                            borderRadius: "6px",
+                            fontSize: "12px",
+                            border: `1px solid ${BRAND_COLORS.warning}`,
+                            width: "fit-content"
+                        }}>
+                            💡 No wallets found. Use the Wallet Manager to generate wallets first!
+                        </div>
+                    )}
 
                     {/* Enhanced Image Selection */}
                     <div>
@@ -1062,14 +1062,62 @@ Transaction:`);
                     </div>
 
                     <div>
-                        <label style={labelStyle}>Symbol</label>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                            <label style={labelStyle}>Symbol</label>
+                            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                <span style={{
+                                    fontSize: "10px",
+                                    color: autoGenerateSymbol ? BRAND_COLORS.success : BRAND_COLORS.textMuted,
+                                    backgroundColor: (autoGenerateSymbol ? BRAND_COLORS.success : BRAND_COLORS.textMuted) + "20",
+                                    padding: "2px 6px",
+                                    borderRadius: "4px",
+                                    fontWeight: "600"
+                                }}>
+                                    {autoGenerateSymbol ? "AUTO" : "MANUAL"}
+                                </span>
+                                <button
+                                    onClick={() => setAutoGenerateSymbol(!autoGenerateSymbol)}
+                                    style={{
+                                        backgroundColor: BRAND_COLORS.accent3,
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "4px",
+                                        padding: "4px 8px",
+                                        fontSize: "10px",
+                                        cursor: "pointer",
+                                        fontWeight: "600"
+                                    }}
+                                    title={autoGenerateSymbol ? "Switch to manual entry" : "Enable auto-generation"}
+                                >
+                                    {autoGenerateSymbol ? "🔄" : "✏️"}
+                                </button>
+                            </div>
+                        </div>
                         <input 
                             type="text"
                             value={symbol} 
-                            onChange={(e) => setSymbol(e.target.value.toUpperCase())} 
-                            placeholder="e.g. LAUNCH"
-                            style={inputStyle}
+                            onChange={(e) => {
+                                setSymbol(e.target.value.toUpperCase());
+                                if (e.target.value !== symbol) {
+                                    setAutoGenerateSymbol(false); // Disable auto-gen when user types
+                                }
+                            }} 
+                            placeholder={autoGenerateSymbol ? "Auto-generated from name..." : "e.g. LAUNCH"}
+                            style={{
+                                ...inputStyle,
+                                borderColor: autoGenerateSymbol ? BRAND_COLORS.success : BRAND_COLORS.primaryDark,
+                                backgroundColor: autoGenerateSymbol ? BRAND_COLORS.success + "10" : inputStyle.backgroundColor
+                            }}
                         />
+                        {autoGenerateSymbol && coinName && (
+                            <Text style={{ 
+                                fontSize: "10px", 
+                                color: BRAND_COLORS.textMuted,
+                                marginTop: "4px" 
+                            }}>
+                                💡 Symbol auto-generated from "{coinName}" → {symbol}
+                            </Text>
+                        )}
                     </div>
 
                     <div>
@@ -1113,149 +1161,50 @@ Transaction:`);
                         </Text>
                     </div>
 
-                    {/* NEW: Enhanced Dev Buy Amount with Settings Integration */}
+                    {/* Dev Buy Amount - Simple Display */}
                     <div style={{ width: "100%" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                            <label style={labelStyle}>💰 Dev Buy Amount (SOL)</label>
-                            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                                <span style={{
-                                    fontSize: "10px",
-                                    color: useCustomBuyAmount ? BRAND_COLORS.warning : BRAND_COLORS.success,
-                                    backgroundColor: (useCustomBuyAmount ? BRAND_COLORS.warning : BRAND_COLORS.success) + "20",
-                                    padding: "2px 6px",
-                                    borderRadius: "4px",
-                                    fontWeight: "600"
-                                }}>
-                                    {useCustomBuyAmount ? "CUSTOM" : "FROM SETTINGS"}
-                                </span>
-                                <button
-                                    onClick={() => {
-                                        setUseCustomBuyAmount(false);
-                                        setBuyAmount(globalSettings.devBuyAmount || "0.1");
-                                    }}
-                                    style={{
-                                        backgroundColor: BRAND_COLORS.accent3,
-                                        color: "white",
-                                        border: "none",
-                                        borderRadius: "4px",
-                                        padding: "4px 8px",
-                                        fontSize: "10px",
-                                        cursor: "pointer",
-                                        fontWeight: "600"
-                                    }}
-                                    title="Reset to global settings value"
-                                >
-                                    🔄 Reset
-                                </button>
+                        <label style={labelStyle}>💰 Dev Buy Amount (SOL)</label>
+                        <div style={{
+                            backgroundColor: BRAND_COLORS.primaryDark,
+                            border: `1px solid ${BRAND_COLORS.accent3}`,
+                            borderRadius: "6px",
+                            padding: "12px",
+                            marginTop: "8px",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center"
+                        }}>
+                            <div>
+                                <Text style={{ fontSize: "14px", fontWeight: "600", color: BRAND_COLORS.accent2 }}>
+                                    {buyAmount} SOL
+                                </Text>
+                                <Text style={{ fontSize: "10px", color: BRAND_COLORS.textMuted, marginTop: "4px" }}>
+                                    From global settings - change in ⚙️ Settings
+                                </Text>
+                            </div>
+                            <div style={{
+                                fontSize: "10px",
+                                color: BRAND_COLORS.success,
+                                backgroundColor: BRAND_COLORS.success + "20",
+                                padding: "2px 6px",
+                                borderRadius: "4px",
+                                fontWeight: "600"
+                            }}>
+                                FROM SETTINGS
                             </div>
                         </div>
-                        
-                        <div style={{ marginBottom: "8px" }}>
-                            <input 
-                                type="number"
-                                value={buyAmount} 
-                                onChange={(e) => {
-                                    setBuyAmount(e.target.value);
-                                    setUseCustomBuyAmount(true);
-                                }}
-                                placeholder="0.1"
-                                min="0.01"
-                                max="10"
-                                step="0.01"
-                                style={{
-                                    ...inputStyle,
-                                    borderColor: useCustomBuyAmount ? BRAND_COLORS.warning : BRAND_COLORS.primaryDark
-                                }}
-                            />
-                        </div>
-                        
-                        {/* Quick Amount Buttons */}
-                        <div style={{ 
-                            display: "grid", 
-                            gridTemplateColumns: "repeat(4, 1fr)", 
-                            gap: "8px",
-                            marginBottom: "8px"
-                        }}>
-                            {["0.01", "0.05", "0.1", "0.2", "0.5", "1.0"].slice(0, 4).map(amount => (
-                                <button
-                                    key={amount}
-                                    className="quick-amount-button"
-                                    onClick={() => handleQuickBuyAmount(amount)}
-                                    style={{
-                                        backgroundColor: buyAmount === amount ? BRAND_COLORS.accent2 : BRAND_COLORS.charcoal,
-                                        color: "white",
-                                        border: "none",
-                                        borderRadius: "6px",
-                                        padding: "8px 4px",
-                                        fontSize: "11px",
-                                        cursor: "pointer",
-                                        fontWeight: "600",
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        gap: "2px"
-                                    }}
-                                >
-                                    <span>{amount}</span>
-                                    <span style={{ fontSize: "8px", opacity: 0.8 }}>SOL</span>
-                                </button>
-                            ))}
-                        </div>
-                        
-                        <div style={{ 
-                            display: "grid", 
-                            gridTemplateColumns: "repeat(2, 1fr)", 
-                            gap: "8px",
-                            marginBottom: "8px"
-                        }}>
-                            {["0.5", "1.0"].map(amount => (
-                                <button
-                                    key={amount}
-                                    className="quick-amount-button"
-                                    onClick={() => handleQuickBuyAmount(amount)}
-                                    style={{
-                                        backgroundColor: buyAmount === amount ? BRAND_COLORS.accent2 : BRAND_COLORS.charcoal,
-                                        color: "white",
-                                        border: "none",
-                                        borderRadius: "6px",
-                                        padding: "8px 4px",
-                                        fontSize: "11px",
-                                        cursor: "pointer",
-                                        fontWeight: "600",
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        gap: "2px"
-                                    }}
-                                >
-                                    <span>{amount}</span>
-                                    <span style={{ fontSize: "8px", opacity: 0.8 }}>SOL</span>
-                                </button>
-                            ))}
-                        </div>
-                        
-                        <Text style={{ 
-                            fontSize: "11px", 
-                            color: BRAND_COLORS.textMuted 
-                        }}>
-                            {useCustomBuyAmount ? (
-                                <>Custom amount (overrides global setting of {globalSettings.devBuyAmount || "0.1"} SOL)</>
-                            ) : (
-                                <>Using global setting from ⚙️ Settings ({globalSettings.devBuyAmount || "0.1"} SOL)</>
-                            )}
-                            <br />
-                            SOL to buy your own token immediately after creation
-                        </Text>
                         
                         {/* Show current wallet balance for reference */}
                         {selectedWalletObj?.id && walletBalances[selectedWalletObj.id] !== undefined && (
                             <div style={{
                                 fontSize: "10px",
                                 color: parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] ? BRAND_COLORS.danger : BRAND_COLORS.textMuted,
-                                marginTop: "4px",
-                                padding: "4px 8px",
+                                marginTop: "8px",
+                                padding: "8px",
                                 backgroundColor: parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] ? BRAND_COLORS.danger + "10" : BRAND_COLORS.primaryDark,
-                                borderRadius: "4px"
+                                borderRadius: "4px",
+                                border: `1px solid ${parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] ? BRAND_COLORS.danger : BRAND_COLORS.charcoal}`,
+                                textAlign: "center"
                             }}>
                                 {parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] ? "⚠️ " : "💼 "}
                                 Wallet balance: {walletBalances[selectedWalletObj.id].toFixed(4)} SOL
@@ -1373,7 +1322,7 @@ Transaction:`);
                         transition: "all 0.2s ease"
                     }}
                 >
-                    {loading ? "Creating Token..." : `Create Coin ${usingCachedImage ? '(💾 Cached)' : ''} - Buy: ${buyAmount} SOL ${useCustomBuyAmount ? '(Custom)' : '(Settings)'} - Wallet: ${selectedWalletObj?.name || 'Select Wallet'}`}
+                    {loading ? "Creating Token..." : `Create Coin ${usingCachedImage ? '(💾 Cached)' : ''} - Buy: ${buyAmount} SOL (from Settings)`}
                 </button>
                 <Button
                     color={Button.Colors.TRANSPARENT}

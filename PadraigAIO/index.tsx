@@ -45,7 +45,7 @@ try {
 
 export default definePlugin({
     name: "CreateCoinFromTweet",
-    description: "Enhanced PumpPortal plugin with advanced storage, image caching, optimized IPFS uploads, default wallet management, smart CA detection (including pump/bonk suffixes), and precise Twitter content injection.",
+    description: "PadraigAIO",
     authors: ["Padraig"],
 
     start() {

@@ -88,6 +88,16 @@ export function CoinModal(props: any) {
     const [loadingProgress, setLoadingProgress] = React.useState(0);
     const [response, setResponse] = React.useState<string | null>(null);
     
+    // Success celebration states
+    const [showConfetti, setShowConfetti] = React.useState(false);
+    const [transactionUrl, setTransactionUrl] = React.useState<string>("");
+    const [createdTokenInfo, setCreatedTokenInfo] = React.useState<{
+        name: string;
+        symbol: string;
+        signature: string;
+        mint?: string;
+    } | null>(null);
+    
     // Enhanced storage state
     const [storageInfo, setStorageInfo] = React.useState<any>(null);
     const [usingCachedImage, setUsingCachedImage] = React.useState(false);
@@ -160,32 +170,211 @@ export function CoinModal(props: any) {
         }
     }, [coinName, autoGenerateSymbol]);
 
-    // Add CSS animation for spinner when component mounts
+    // Confetti celebration functions
+    const createConfetti = () => {
+        if (typeof document === 'undefined') return;
+        
+        const confettiContainer = document.createElement('div');
+        confettiContainer.id = 'vencord-confetti-container';
+        confettiContainer.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10000;
+        `;
+        
+        // Create 20 confetti pieces
+        for (let i = 0; i < 20; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'vencord-confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.animationDelay = Math.random() * 2 + 's';
+            confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+            
+            // Random colors and shapes
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#e67e22', '#1abc9c', '#e91e63'];
+            confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+            
+            confettiContainer.appendChild(confetti);
+        }
+        
+        document.body.appendChild(confettiContainer);
+        
+        // Clean up after animation
+        setTimeout(() => {
+            const container = document.getElementById('vencord-confetti-container');
+            if (container) container.remove();
+        }, 4000);
+    };
+
+    const triggerSuccessAnimation = () => {
+        setShowConfetti(true);
+        createConfetti();
+        
+        // Reset confetti state
+        setTimeout(() => {
+            setShowConfetti(false);
+        }, 4000);
+    };
+
+    // Copy to clipboard helper
+    const copyToClipboard = async (text: string, label: string = "text") => {
+        try {
+            await navigator.clipboard.writeText(text);
+            // Show a quick toast notification
+            const toast = document.createElement('div');
+            toast.textContent = `✅ ${label} copied to clipboard!`;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${BRAND_COLORS.success};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                z-index: 10001;
+                font-size: 14px;
+                font-weight: 600;
+                animation: fadeInUp 0.3s ease;
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 3000);
+        } catch (err) {
+            console.error('Failed to copy to clipboard:', err);
+        }
+    };
+
+    // Add enhanced CSS animations when component mounts
     React.useEffect(() => {
-        const addSpinnerAnimation = () => {
-            if (typeof document !== 'undefined' && !document.getElementById('vencord-spinner-animation')) {
+        const addEnhancedAnimations = () => {
+            if (typeof document !== 'undefined' && !document.getElementById('vencord-enhanced-animations')) {
                 const style = document.createElement('style');
-                style.id = 'vencord-spinner-animation';
+                style.id = 'vencord-enhanced-animations';
                 style.textContent = `
                     @keyframes rotation {
                         0% { transform: rotate(0deg); }
                         100% { transform: rotate(360deg); }
+                    }
+
+                    @keyframes fadeInUp {
+                        0% { 
+                            opacity: 0; 
+                            transform: translateY(10px); 
+                        }
+                        100% { 
+                            opacity: 1; 
+                            transform: translateY(0); 
+                        }
+                    }
+
+                    @keyframes fadeOut {
+                        0% { 
+                            opacity: 1; 
+                            transform: translateY(0); 
+                        }
+                        100% { 
+                            opacity: 0; 
+                            transform: translateY(-10px); 
+                        }
+                    }
+
+                    @keyframes checkmark {
+                        0% { 
+                            transform: scale(0); 
+                            opacity: 0; 
+                        }
+                        50% { 
+                            transform: scale(1.2); 
+                            opacity: 1; 
+                        }
+                        100% { 
+                            transform: scale(1); 
+                            opacity: 1; 
+                        }
+                    }
+
+                    @keyframes pulse {
+                        0% { transform: scale(1); }
+                        50% { transform: scale(1.05); }
+                        100% { transform: scale(1); }
+                    }
+
+                    .vencord-form-field {
+                        transition: all 0.3s ease;
+                    }
+
+                    .vencord-form-field:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    }
+
+                    .vencord-validation-message {
+                        animation: fadeInUp 0.3s ease;
+                    }
+
+                    .vencord-success-checkmark {
+                        animation: checkmark 0.4s ease;
+                    }
+
+                    @keyframes confetti-fall {
+                        0% {
+                            transform: translateY(-100vh) rotate(0deg);
+                            opacity: 1;
+                        }
+                        100% {
+                            transform: translateY(100vh) rotate(720deg);
+                            opacity: 0;
+                        }
+                    }
+
+                    .vencord-confetti {
+                        position: fixed;
+                        width: 10px;
+                        height: 10px;
+                        background: #f39c12;
+                        animation: confetti-fall 3s linear infinite;
+                        z-index: 10000;
+                    }
+
+                    .vencord-confetti:nth-child(1) { left: 10%; animation-delay: 0s; background: #e74c3c; }
+                    .vencord-confetti:nth-child(2) { left: 20%; animation-delay: 0.2s; background: #3498db; }
+                    .vencord-confetti:nth-child(3) { left: 30%; animation-delay: 0.4s; background: #2ecc71; }
+                    .vencord-confetti:nth-child(4) { left: 40%; animation-delay: 0.6s; background: #f39c12; }
+                    .vencord-confetti:nth-child(5) { left: 50%; animation-delay: 0.8s; background: #9b59b6; }
+                    .vencord-confetti:nth-child(6) { left: 60%; animation-delay: 1s; background: #e67e22; }
+                    .vencord-confetti:nth-child(7) { left: 70%; animation-delay: 1.2s; background: #1abc9c; }
+                    .vencord-confetti:nth-child(8) { left: 80%; animation-delay: 1.4s; background: #34495e; }
+                    .vencord-confetti:nth-child(9) { left: 90%; animation-delay: 1.6s; background: #e91e63; }
+                    .vencord-confetti:nth-child(10) { left: 95%; animation-delay: 1.8s; background: #ff5722; }
+
+                    @keyframes success-celebration {
+                        0% { transform: scale(1); }
+                        50% { transform: scale(1.05); }
+                        100% { transform: scale(1); }
+                    }
+
+                    .vencord-success-celebration {
+                        animation: success-celebration 0.6s ease-in-out;
                     }
                 `;
                 document.head.appendChild(style);
             }
         };
 
-        // Add animation safely when DOM is ready
+        // Add animations safely when DOM is ready
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', addSpinnerAnimation);
+            document.addEventListener('DOMContentLoaded', addEnhancedAnimations);
         } else {
-            addSpinnerAnimation();
+            addEnhancedAnimations();
         }
 
         return () => {
             // Cleanup listener if component unmounts before DOM ready
-            document.removeEventListener('DOMContentLoaded', addSpinnerAnimation);
+            document.removeEventListener('DOMContentLoaded', addEnhancedAnimations);
         };
     }, []);
 
@@ -365,13 +554,6 @@ export function CoinModal(props: any) {
         await checkCachedImage(imageUrl);
     };
 
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text).then(() => {
-            console.log("[CoinModal] Copied to clipboard");
-        }).catch(err => {
-            console.error("[CoinModal] Copy failed:", err);
-        });
-    };
 
     const formatAddress = (address: string) => {
         if (!address) return "";
@@ -683,12 +865,24 @@ export function CoinModal(props: any) {
                             setLoadingStage("Token Created!");
                             setLoadingProgress(95);
                             
-                            // Final success state
+                            const txUrl = `https://solscan.io/tx/${createJson.signature}`;
+                            
+                            // Store success info for celebration
+                            setCreatedTokenInfo({
+                                name: nameStr,
+                                symbol: symbolStr,
+                                signature: createJson.signature,
+                                mint: createJson.mint
+                            });
+                            setTransactionUrl(txUrl);
+                            
+                            // Final success state with celebration
                             setTimeout(() => {
                                 setLoadingStage("Success!");
                                 setLoadingProgress(100);
+                                triggerSuccessAnimation();
                             }, 500);
-                            const txUrl = `https://solscan.io/tx/${createJson.signature}`;
+                            
                             setResponse(`✅ Token created successfully! 🎉
 
 Method: ${uploadMethod} (${imageOptimized ? 'optimized' : 'original'})
@@ -915,45 +1109,35 @@ Transaction:`);
                 </div>
             </ModalHeader>
 
-            <ModalContent style={{ padding: "20px 24px" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "20px", alignItems: "flex-start" }}>
+            <ModalContent style={{ padding: "16px 20px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "flex-start" }}>
                     
-                    {/* Simple Wallet Balance Display */}
+                    {/* Compact Wallet Balance Display */}
                     {selectedWalletObj && (
-                        <div style={{ width: "100%", marginBottom: "16px" }}>
+                        <div style={{ width: "100%", marginBottom: "4px" }}>
                             <div style={{
                                 backgroundColor: BRAND_COLORS.primaryDark,
                                 border: `1px solid ${BRAND_COLORS.accent3}`,
-                                borderRadius: "8px",
-                                padding: "12px",
+                                borderRadius: "4px",
+                                padding: "6px 8px",
                                 display: "flex",
                                 justifyContent: "space-between",
                                 alignItems: "center"
                             }}>
-                                <div>
-                                    <Text style={{ fontSize: "12px", color: BRAND_COLORS.textMuted }}>
-                                        💼 Wallet Balance
-                                    </Text>
-                                    <Text style={{ 
-                                        fontSize: "16px", 
-                                        fontWeight: "600", 
-                                        color: BRAND_COLORS.text,
-                                        fontFamily: "monospace",
-                                        marginTop: "4px"
-                                    }}>
-                                        {loadingBalances[selectedWalletObj.id] ? "Loading..." : `${walletBalances[selectedWalletObj.id]?.toFixed(4) ?? "0.0000"} SOL`}
-                                    </Text>
-                                </div>
-                                <div style={{
-                                    fontSize: "10px",
-                                    color: BRAND_COLORS.success,
-                                    backgroundColor: BRAND_COLORS.success + "20",
-                                    padding: "4px 8px",
-                                    borderRadius: "4px",
-                                    fontWeight: "600"
+                                <Text style={{ 
+                                    fontSize: "11px", 
+                                    fontWeight: "600", 
+                                    color: BRAND_COLORS.text,
+                                    fontFamily: "monospace"
                                 }}>
-                                    DEFAULT WALLET
-                                </div>
+                                    💼 {loadingBalances[selectedWalletObj.id] ? "Loading..." : `${walletBalances[selectedWalletObj.id]?.toFixed(3) ?? "0.000"} SOL`}
+                                </Text>
+                                <Text style={{
+                                    fontSize: "8px",
+                                    color: BRAND_COLORS.textMuted
+                                }}>
+                                    DEFAULT
+                                </Text>
                             </div>
                         </div>
                     )}
@@ -978,8 +1162,8 @@ Transaction:`);
                         <div style={{
                             display: "flex",
                             alignItems: "flex-start",
-                            gap: "12px",
-                            marginBottom: "16px",
+                            gap: "8px",
+                            marginBottom: "12px",
                             flexWrap: "wrap"
                         }}>
                             <div style={{
@@ -1218,127 +1402,50 @@ Transaction:`);
                         </Text>
                     </div>
 
-                    {/* Dev Buy Amount - Simple Display */}
-                    <div style={{ width: "100%" }}>
-                        <label style={labelStyle}>💰 Dev Buy Amount (SOL)</label>
+                    {/* Dev Buy Amount - Compact Display */}
+                    <div style={{ width: "100%", marginTop: "4px" }}>
                         <div style={{
                             backgroundColor: BRAND_COLORS.primaryDark,
                             border: `1px solid ${BRAND_COLORS.accent3}`,
-                            borderRadius: "6px",
-                            padding: "12px",
-                            marginTop: "8px",
+                            borderRadius: "4px",
+                            padding: "8px",
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center"
                         }}>
                             <div>
-                                <Text style={{ fontSize: "14px", fontWeight: "600", color: BRAND_COLORS.accent2 }}>
-                                    {buyAmount} SOL
+                                <Text style={{ fontSize: "12px", fontWeight: "600", color: BRAND_COLORS.accent2 }}>
+                                    💰 Dev Buy: {buyAmount} SOL
                                 </Text>
-                                <Text style={{ fontSize: "10px", color: BRAND_COLORS.textMuted, marginTop: "4px" }}>
-                                    From global settings - change in ⚙️ Settings
-                                </Text>
+                                {selectedWalletObj?.id && walletBalances[selectedWalletObj.id] !== undefined && (
+                                    <Text style={{ 
+                                        fontSize: "9px", 
+                                        color: parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] ? BRAND_COLORS.danger : BRAND_COLORS.textMuted,
+                                        marginTop: "2px" 
+                                    }}>
+                                        {parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] ? "⚠️ " : "💼 "}
+                                        Balance: {walletBalances[selectedWalletObj.id].toFixed(3)} SOL
+                                        {parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] && " (Low!)"}
+                                    </Text>
+                                )}
                             </div>
-                            <div style={{
-                                fontSize: "10px",
-                                color: BRAND_COLORS.success,
-                                backgroundColor: BRAND_COLORS.success + "20",
-                                padding: "2px 6px",
-                                borderRadius: "4px",
-                                fontWeight: "600"
+                            <Text style={{
+                                fontSize: "8px",
+                                color: BRAND_COLORS.textMuted,
+                                textAlign: "right"
                             }}>
-                                FROM SETTINGS
-                            </div>
+                                FROM<br/>SETTINGS
+                            </Text>
                         </div>
-                        
-                        {/* Show current wallet balance for reference */}
-                        {selectedWalletObj?.id && walletBalances[selectedWalletObj.id] !== undefined && (
-                            <div style={{
-                                fontSize: "10px",
-                                color: parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] ? BRAND_COLORS.danger : BRAND_COLORS.textMuted,
-                                marginTop: "8px",
-                                padding: "8px",
-                                backgroundColor: parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] ? BRAND_COLORS.danger + "10" : BRAND_COLORS.primaryDark,
-                                borderRadius: "4px",
-                                border: `1px solid ${parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] ? BRAND_COLORS.danger : BRAND_COLORS.charcoal}`,
-                                textAlign: "center"
-                            }}>
-                                {parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] ? "⚠️ " : "💼 "}
-                                Wallet balance: {walletBalances[selectedWalletObj.id].toFixed(4)} SOL
-                                {parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] && " (Insufficient funds!)"}
-                            </div>
-                        )}
                     </div>
 
-                    {/* Storage Management Controls */}
-                    <div style={{ width: "100%", marginTop: "12px" }}>
-                        <label style={labelStyle}>Storage Management</label>
-                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                            <button
-                                onClick={async () => {
-                                    await storageManager.clearImageCache();
-                                    alert("Image cache cleared!");
-                                    const info = await storageManager.getStorageInfo();
-                                    setStorageInfo(info);
-                                }}
-                                style={{
-                                    background: BRAND_COLORS.warning,
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    padding: "4px 8px",
-                                    fontSize: "10px",
-                                    cursor: "pointer"
-                                }}
-                            >
-                                🗑️ Clear Cache
-                            </button>
-                            
-                            <button
-                                onClick={async () => {
-                                    const info = await storageManager.getStorageInfo();
-                                    alert(`Storage: ${info?.usage} used (${info?.usagePercent})\nCached images: ${info?.breakdown?.cachedImages}\nUpload history: ${info?.breakdown?.uploadHistory}`);
-                                }}
-                                style={{
-                                    background: BRAND_COLORS.accent3,
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    padding: "4px 8px",
-                                    fontSize: "10px",
-                                    cursor: "pointer"
-                                }}
-                            >
-                                📊 Storage Info
-                            </button>
-                            
-                            <button
-                                onClick={async () => {
-                                    const history = await storageManager.getUploadHistory(5);
-                                    const summary = history.map(h => `${h.success ? '✅' : '❌'} ${h.method} - ${new Date(h.timestamp).toLocaleString()}`).join('\n');
-                                    alert(`Recent Uploads:\n${summary || 'No uploads yet'}`);
-                                }}
-                                style={{
-                                    background: BRAND_COLORS.charcoal,
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    padding: "4px 8px",
-                                    fontSize: "10px",
-                                    cursor: "pointer"
-                                }}
-                            >
-                                📈 Upload History
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 {response && (
                     <div 
                         className="coin-modal-response"
                         style={{
-                            marginTop: "16px",
+                            marginTop: "12px",
                             padding: "12px",
                             backgroundColor: response.includes("✅") 
                                 ? BRAND_COLORS.success + "20"
@@ -1357,6 +1464,145 @@ Transaction:`);
                         }}>
                             {response}
                         </Text>
+                    </div>
+                )}
+
+                {/* Success Celebration Overlay */}
+                {createdTokenInfo && (
+                    <div style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: "rgba(0, 0, 0, 0.9)",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 1000,
+                        borderRadius: "12px"
+                    }}>
+                        <div 
+                            className="vencord-success-celebration"
+                            style={{
+                                backgroundColor: BRAND_COLORS.primaryDark,
+                                padding: "32px",
+                                borderRadius: "16px",
+                                border: `2px solid ${BRAND_COLORS.success}`,
+                                textAlign: "center",
+                                maxWidth: "400px",
+                                margin: "20px"
+                            }}
+                        >
+                            <div style={{ fontSize: "48px", marginBottom: "16px" }}>🎉</div>
+                            
+                            <Text style={{ 
+                                fontSize: "24px", 
+                                fontWeight: "bold", 
+                                color: BRAND_COLORS.success,
+                                marginBottom: "8px"
+                            }}>
+                                Token Created Successfully!
+                            </Text>
+                            
+                            <Text style={{ 
+                                fontSize: "18px", 
+                                color: BRAND_COLORS.text,
+                                marginBottom: "16px"
+                            }}>
+                                {createdTokenInfo.name} ({createdTokenInfo.symbol})
+                            </Text>
+                            
+                            {/* Action Buttons */}
+                            <div style={{ 
+                                display: "flex", 
+                                gap: "12px", 
+                                justifyContent: "center",
+                                flexWrap: "wrap",
+                                marginTop: "24px"
+                            }}>
+                                <button
+                                    onClick={() => copyToClipboard(transactionUrl, "Transaction link")}
+                                    style={{
+                                        backgroundColor: BRAND_COLORS.accent3,
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "8px",
+                                        padding: "12px 16px",
+                                        fontSize: "14px",
+                                        fontWeight: "600",
+                                        cursor: "pointer",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px"
+                                    }}
+                                >
+                                    📋 Copy Transaction
+                                </button>
+                                
+                                <button
+                                    onClick={() => {
+                                        const shareText = `🎉 Just created ${createdTokenInfo.name} (${createdTokenInfo.symbol}) on Solana! 🚀\n\nTransaction: ${transactionUrl}`;
+                                        copyToClipboard(shareText, "Share message");
+                                    }}
+                                    style={{
+                                        backgroundColor: BRAND_COLORS.success,
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "8px",
+                                        padding: "12px 16px",
+                                        fontSize: "14px",
+                                        fontWeight: "600",
+                                        cursor: "pointer",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px"
+                                    }}
+                                >
+                                    📢 Share Success
+                                </button>
+                                
+                                <button
+                                    onClick={() => window.open(transactionUrl, '_blank')}
+                                    style={{
+                                        backgroundColor: BRAND_COLORS.accent2,
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "8px",
+                                        padding: "12px 16px",
+                                        fontSize: "14px",
+                                        fontWeight: "600",
+                                        cursor: "pointer",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px"
+                                    }}
+                                >
+                                    🔗 View on Solscan
+                                </button>
+                            </div>
+                            
+                            <button
+                                onClick={() => {
+                                    setCreatedTokenInfo(null);
+                                    setTransactionUrl("");
+                                    props.onClose();
+                                }}
+                                style={{
+                                    backgroundColor: "transparent",
+                                    color: BRAND_COLORS.textMuted,
+                                    border: `1px solid ${BRAND_COLORS.textMuted}`,
+                                    borderRadius: "8px",
+                                    padding: "8px 16px",
+                                    fontSize: "12px",
+                                    cursor: "pointer",
+                                    marginTop: "16px"
+                                }}
+                            >
+                                Close
+                            </button>
+                        </div>
                     </div>
                 )}
             </ModalContent>

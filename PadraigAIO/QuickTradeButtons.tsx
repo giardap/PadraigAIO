@@ -1,8 +1,15 @@
+/*
+ * Vencord, a Discord client mod
+ * Copyright (c) 2025 Vendicated and contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
 import { React } from "@webpack/common";
+
+import { marketDataCollector } from "./marketDataUtils";
 import { getGlobalTradingSettings } from "./StandaloneTradingSettingsModal";
 import { getDefaultWallet, getStoredWallets } from "./storageHelper";
 import { showToast } from "./ToastManager";
-import { marketDataCollector } from "./marketDataUtils";
 
 // Brand colors for consistency
 const BRAND_COLORS = {
@@ -89,7 +96,7 @@ export function QuickTradeButtons({ contractAddress, onViewDetails }: QuickTrade
             });
 
             const responseText = await response.text();
-            
+
             if (!response.ok) {
                 throw new Error(`Trade failed: ${response.status} - ${responseText}`);
             }
@@ -105,8 +112,8 @@ export function QuickTradeButtons({ contractAddress, onViewDetails }: QuickTrade
                 const tokenSymbol = tokenData?.symbol || "TOKEN";
                 const message = `${action === "buy" ? "📈 Bought" : "📉 Sold"} ${tokenSymbol} for ${amount} ${action === "buy" ? "SOL" : "tokens"}`;
                 showToast.success(message, 8000);
-                
-                console.log(`[QuickTrade] Success:`, {
+
+                console.log("[QuickTrade] Success:", {
                     action,
                     amount,
                     token: tokenSymbol,
@@ -121,8 +128,8 @@ export function QuickTradeButtons({ contractAddress, onViewDetails }: QuickTrade
 
         } catch (error: any) {
             console.error("[QuickTrade] Error:", error);
-            
-            if (error.message && error.message.includes('CORS')) {
+
+            if (error.message && error.message.includes("CORS")) {
                 showToast.error("❌ Trade blocked by browser security. Try using the full trade modal.");
             } else {
                 showToast.error(`❌ ${action} failed: ${error.message || "Unknown error"}`);
@@ -154,7 +161,7 @@ export function QuickTradeButtons({ contractAddress, onViewDetails }: QuickTrade
     };
 
     const quickBuyAmounts = ["0.1", "0.5", "1.0"];
-    
+
     return (
         <div style={{
             display: "inline-block",
@@ -189,10 +196,10 @@ export function QuickTradeButtons({ contractAddress, onViewDetails }: QuickTrade
                             backgroundColor: BRAND_COLORS.success,
                             color: "white"
                         }}
-                        onMouseEnter={(e) => {
+                        onMouseEnter={e => {
                             if (!loading) (e.target as HTMLElement).style.transform = "scale(1.05)";
                         }}
-                        onMouseLeave={(e) => {
+                        onMouseLeave={e => {
                             if (!loading) (e.target as HTMLElement).style.transform = "scale(1)";
                         }}
                         title={`Buy ${amount} SOL worth of tokens`}
@@ -212,10 +219,10 @@ export function QuickTradeButtons({ contractAddress, onViewDetails }: QuickTrade
                         color: "white",
                         minWidth: "80px"
                     }}
-                    onMouseEnter={(e) => {
+                    onMouseEnter={e => {
                         (e.target as HTMLElement).style.transform = "scale(1.05)";
                     }}
-                    onMouseLeave={(e) => {
+                    onMouseLeave={e => {
                         (e.target as HTMLElement).style.transform = "scale(1)";
                     }}
                     title="Open full trading modal"
@@ -234,10 +241,10 @@ export function QuickTradeButtons({ contractAddress, onViewDetails }: QuickTrade
                         color: "white",
                         minWidth: "50px"
                     }}
-                    onMouseEnter={(e) => {
+                    onMouseEnter={e => {
                         (e.target as HTMLElement).style.transform = "scale(1.05)";
                     }}
-                    onMouseLeave={(e) => {
+                    onMouseLeave={e => {
                         (e.target as HTMLElement).style.transform = "scale(1)";
                     }}
                     title={`Copy address: ${formatAddress(contractAddress)}`}

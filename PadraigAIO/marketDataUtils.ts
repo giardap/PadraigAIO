@@ -1,3 +1,9 @@
+/*
+ * Vencord, a Discord client mod
+ * Copyright (c) 2025 Vendicated and contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
 /**
  * Enhanced Market Data Collection and Analysis Utilities
  * Provides comprehensive market data from multiple sources with advanced analytics
@@ -12,7 +18,7 @@ export interface EnhancedTokenMetadata {
     totalSupply?: number;
     description?: string;
     logoURI?: string;
-    
+
     // Market data
     price?: number;
     marketCap?: number;
@@ -26,7 +32,7 @@ export interface EnhancedTokenMetadata {
     priceChange24h?: number;
     priceChange7d?: number;
     priceChange30d?: number;
-    
+
     // Trading metrics
     buys24h?: number;
     sells24h?: number;
@@ -35,13 +41,13 @@ export interface EnhancedTokenMetadata {
     holdersCount?: number;
     liquidity?: number;
     liquidityUsd?: number;
-    
+
     // Pool information
     pooledSol?: number;
     pooledTokens?: number;
     poolAddress?: string;
     dexName?: string;
-    
+
     // Price extremes
     ath?: number; // All time high
     athDate?: string;
@@ -49,7 +55,7 @@ export interface EnhancedTokenMetadata {
     atlDate?: string;
     high24h?: number;
     low24h?: number;
-    
+
     // Social and external links
     website?: string;
     twitter?: string;
@@ -57,31 +63,31 @@ export interface EnhancedTokenMetadata {
     discord?: string;
     github?: string;
     reddit?: string;
-    
+
     // Analytical metrics
     volatility?: number;
     beta?: number;
     sharpeRatio?: number;
     volume24hChangePercent?: number;
     marketCapRank?: number;
-    
+
     // Supply metrics
     circulatingSupply?: number;
     maxSupply?: number;
     inflationRate?: number;
     burnRate?: number;
-    
+
     // DeFi metrics
     tvl?: number; // Total value locked
     apr?: number; // Annual percentage rate
     apy?: number; // Annual percentage yield
     stakingRatio?: number;
-    
+
     // Risk metrics
-    rugPullRisk?: 'low' | 'medium' | 'high';
-    liquidityRisk?: 'low' | 'medium' | 'high';
-    concentrationRisk?: 'low' | 'medium' | 'high';
-    
+    rugPullRisk?: "low" | "medium" | "high";
+    liquidityRisk?: "low" | "medium" | "high";
+    concentrationRisk?: "low" | "medium" | "high";
+
     // Timestamp and source info
     lastUpdated?: string;
     dataSource?: string[];
@@ -98,7 +104,7 @@ export interface MarketDataSource {
 
 export interface PriceAlert {
     tokenAddress: string;
-    type: 'above' | 'below' | 'change_percent';
+    type: "above" | "below" | "change_percent";
     targetValue: number;
     currentValue: number;
     triggered: boolean;
@@ -110,53 +116,53 @@ export class EnhancedMarketDataCollector {
     private readonly cacheTimeout = 60000; // 1 minute cache
     private requestQueue: Array<{ source: string; request: () => Promise<any> }> = [];
     private isProcessingQueue = false;
-    
+
     // Data sources configuration
     private dataSources: { [key: string]: MarketDataSource } = {
         dexscreener: {
-            name: 'DexScreener',
+            name: "DexScreener",
             priority: 1,
             rateLimit: 60, // 60 requests per minute
             lastRequest: 0,
             available: true
         },
         jupiter: {
-            name: 'Jupiter',
+            name: "Jupiter",
             priority: 2,
             rateLimit: 100,
             lastRequest: 0,
             available: true
         },
         coingecko: {
-            name: 'CoinGecko',
+            name: "CoinGecko",
             priority: 3,
             rateLimit: 30,
             lastRequest: 0,
             available: true
         },
         birdeye: {
-            name: 'Birdeye',
+            name: "Birdeye",
             priority: 4,
             rateLimit: 50,
             lastRequest: 0,
             available: true
         },
         solscan: {
-            name: 'Solscan',
+            name: "Solscan",
             priority: 5,
             rateLimit: 60,
             lastRequest: 0,
             available: true
         },
         solana_rpc: {
-            name: 'Solana RPC',
+            name: "Solana RPC",
             priority: 6,
             rateLimit: 120,
             lastRequest: 0,
             available: true
         },
         helius: {
-            name: 'Helius',
+            name: "Helius",
             priority: 7,
             rateLimit: 60,
             lastRequest: 0,
@@ -216,15 +222,15 @@ export class EnhancedMarketDataCollector {
             const results = await Promise.allSettled(
                 dataPromises.map(p => Promise.race([
                     p,
-                    new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Timeout')), 10000)
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error("Timeout")), 10000)
                     )
                 ]))
             );
 
             // Aggregate successful results
             results.forEach((result, index) => {
-                if (result.status === 'fulfilled' && result.value) {
+                if (result.status === "fulfilled" && result.value) {
                     this.mergeMarketData(aggregatedData, result.value);
                 } else {
                     console.warn(`[MarketDataCollector] Source ${index} failed:`, result);
@@ -244,7 +250,7 @@ export class EnhancedMarketDataCollector {
             console.log(`[MarketDataCollector] Collected data from ${aggregatedData.dataSource?.length || 0} sources`);
 
         } catch (error) {
-            console.error(`[MarketDataCollector] Error collecting data:`, error);
+            console.error("[MarketDataCollector] Error collecting data:", error);
             aggregatedData.confidence = 0.1;
         }
 
@@ -266,40 +272,40 @@ export class EnhancedMarketDataCollector {
             if (data.pairs && data.pairs.length > 0) {
                 // Select best pair by liquidity
                 const bestPair = data.pairs.reduce((best: any, current: any) => {
-                    const currentLiquidity = parseFloat(current.liquidity?.usd || '0');
-                    const bestLiquidity = parseFloat(best.liquidity?.usd || '0');
+                    const currentLiquidity = parseFloat(current.liquidity?.usd || "0");
+                    const bestLiquidity = parseFloat(best.liquidity?.usd || "0");
                     return currentLiquidity > bestLiquidity ? current : best;
                 });
 
                 const result: Partial<EnhancedTokenMetadata> = {
                     name: bestPair.baseToken.name,
                     symbol: bestPair.baseToken.symbol,
-                    price: parseFloat(bestPair.priceUsd || '0'),
-                    marketCap: parseFloat(bestPair.marketCap || '0'),
-                    fullyDilutedValuation: parseFloat(bestPair.fdv || '0'),
-                    volume24h: parseFloat(bestPair.volume?.h24 || '0'),
-                    volume1h: parseFloat(bestPair.volume?.h1 || '0'),
-                    volume6h: parseFloat(bestPair.volume?.h6 || '0'),
-                    priceChange24h: parseFloat(bestPair.priceChange?.h24 || '0'),
-                    priceChange1h: parseFloat(bestPair.priceChange?.h1 || '0'),
-                    priceChange6h: parseFloat(bestPair.priceChange?.h6 || '0'),
-                    liquidity: parseFloat(bestPair.liquidity?.usd || '0'),
+                    price: parseFloat(bestPair.priceUsd || "0"),
+                    marketCap: parseFloat(bestPair.marketCap || "0"),
+                    fullyDilutedValuation: parseFloat(bestPair.fdv || "0"),
+                    volume24h: parseFloat(bestPair.volume?.h24 || "0"),
+                    volume1h: parseFloat(bestPair.volume?.h1 || "0"),
+                    volume6h: parseFloat(bestPair.volume?.h6 || "0"),
+                    priceChange24h: parseFloat(bestPair.priceChange?.h24 || "0"),
+                    priceChange1h: parseFloat(bestPair.priceChange?.h1 || "0"),
+                    priceChange6h: parseFloat(bestPair.priceChange?.h6 || "0"),
+                    liquidity: parseFloat(bestPair.liquidity?.usd || "0"),
                     poolAddress: bestPair.pairAddress,
                     dexName: bestPair.dexId,
-                    buys24h: parseInt(bestPair.txns?.h24?.buys || '0'),
-                    sells24h: parseInt(bestPair.txns?.h24?.sells || '0'),
-                    transactions24h: parseInt(bestPair.txns?.h24?.buys || '0') + parseInt(bestPair.txns?.h24?.sells || '0'),
+                    buys24h: parseInt(bestPair.txns?.h24?.buys || "0"),
+                    sells24h: parseInt(bestPair.txns?.h24?.sells || "0"),
+                    transactions24h: parseInt(bestPair.txns?.h24?.buys || "0") + parseInt(bestPair.txns?.h24?.sells || "0"),
                     website: bestPair.info?.websites?.[0],
-                    twitter: bestPair.info?.socials?.find((s: any) => s.type === 'twitter')?.url,
-                    telegram: bestPair.info?.socials?.find((s: any) => s.type === 'telegram')?.url,
-                    dataSource: ['dexscreener']
+                    twitter: bestPair.info?.socials?.find((s: any) => s.type === "twitter")?.url,
+                    telegram: bestPair.info?.socials?.find((s: any) => s.type === "telegram")?.url,
+                    dataSource: ["dexscreener"]
                 };
 
                 this.setCachedData(cacheKey, result);
                 return result;
             }
         } catch (error) {
-            console.warn('[MarketDataCollector] DexScreener API error:', error);
+            console.warn("[MarketDataCollector] DexScreener API error:", error);
         }
 
         return { dataSource: [] };
@@ -321,14 +327,14 @@ export class EnhancedMarketDataCollector {
                 const tokenData = data.data[tokenAddress];
                 const result: Partial<EnhancedTokenMetadata> = {
                     price: tokenData.price,
-                    dataSource: ['jupiter']
+                    dataSource: ["jupiter"]
                 };
 
                 this.setCachedData(cacheKey, result);
                 return result;
             }
         } catch (error) {
-            console.warn('[MarketDataCollector] Jupiter API error:', error);
+            console.warn("[MarketDataCollector] Jupiter API error:", error);
         }
 
         return { dataSource: [] };
@@ -347,10 +353,10 @@ export class EnhancedMarketDataCollector {
             const searchResponse = await fetch(
                 `https://api.coingecko.com/api/v3/coins/solana/contract/${tokenAddress}`
             );
-            
+
             if (searchResponse.ok) {
                 const data = await searchResponse.json();
-                
+
                 const result: Partial<EnhancedTokenMetadata> = {
                     name: data.name,
                     symbol: data.symbol,
@@ -376,14 +382,14 @@ export class EnhancedMarketDataCollector {
                     totalSupply: data.market_data?.total_supply,
                     circulatingSupply: data.market_data?.circulating_supply,
                     maxSupply: data.market_data?.max_supply,
-                    dataSource: ['coingecko']
+                    dataSource: ["coingecko"]
                 };
 
                 this.setCachedData(cacheKey, result);
                 return result;
             }
         } catch (error) {
-            console.warn('[MarketDataCollector] CoinGecko API error:', error);
+            console.warn("[MarketDataCollector] CoinGecko API error:", error);
         }
 
         return { dataSource: [] };
@@ -399,7 +405,7 @@ export class EnhancedMarketDataCollector {
 
         try {
             const headers = {
-                'X-API-KEY': 'YOUR_BIRDEYE_API_KEY' // Replace with actual API key
+                "X-API-KEY": "YOUR_BIRDEYE_API_KEY" // Replace with actual API key
             };
 
             // Fetch token overview
@@ -410,7 +416,7 @@ export class EnhancedMarketDataCollector {
 
             if (overviewResponse.ok) {
                 const overviewData = await overviewResponse.json();
-                
+
                 // Fetch price data
                 const priceResponse = await fetch(
                     `https://public-api.birdeye.so/defi/price?address=${tokenAddress}`,
@@ -425,14 +431,14 @@ export class EnhancedMarketDataCollector {
                     volume24h: overviewData?.data?.v24hUSD,
                     liquidity: overviewData?.data?.liquidity,
                     holdersCount: overviewData?.data?.holder,
-                    dataSource: ['birdeye']
+                    dataSource: ["birdeye"]
                 };
 
                 this.setCachedData(cacheKey, result);
                 return result;
             }
         } catch (error) {
-            console.warn('[MarketDataCollector] Birdeye API error:', error);
+            console.warn("[MarketDataCollector] Birdeye API error:", error);
         }
 
         return { dataSource: [] };
@@ -448,16 +454,16 @@ export class EnhancedMarketDataCollector {
 
         try {
             // Use Helius RPC for better reliability
-            const rpcUrl = 'https://rpc.helius.xyz/?api-key=e3b54e60-daee-442f-8b75-1893c5be291f';
-            
+            const rpcUrl = "https://rpc.helius.xyz/?api-key=e3b54e60-daee-442f-8b75-1893c5be291f";
+
             // Get token supply
             const supplyResponse = await fetch(rpcUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    jsonrpc: '2.0',
+                    jsonrpc: "2.0",
                     id: 1,
-                    method: 'getTokenSupply',
+                    method: "getTokenSupply",
                     params: [tokenAddress]
                 })
             });
@@ -466,29 +472,29 @@ export class EnhancedMarketDataCollector {
 
             // Get account info
             const accountResponse = await fetch(rpcUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    jsonrpc: '2.0',
+                    jsonrpc: "2.0",
                     id: 2,
-                    method: 'getAccountInfo',
-                    params: [tokenAddress, { encoding: 'base64' }]
+                    method: "getAccountInfo",
+                    params: [tokenAddress, { encoding: "base64" }]
                 })
             });
 
             const accountData = await accountResponse.json();
 
             const result: Partial<EnhancedTokenMetadata> = {
-                totalSupply: supplyData.result?.value?.amount ? 
+                totalSupply: supplyData.result?.value?.amount ?
                     parseInt(supplyData.result.value.amount) / Math.pow(10, supplyData.result.value.decimals) : undefined,
                 decimals: supplyData.result?.value?.decimals,
-                dataSource: ['solana_rpc']
+                dataSource: ["solana_rpc"]
             };
 
             this.setCachedData(cacheKey, result);
             return result;
         } catch (error) {
-            console.warn('[MarketDataCollector] On-chain data error:', error);
+            console.warn("[MarketDataCollector] On-chain data error:", error);
         }
 
         return { dataSource: [] };
@@ -508,13 +514,13 @@ export class EnhancedMarketDataCollector {
 
             const result: Partial<EnhancedTokenMetadata> = {
                 holdersCount: data.total,
-                dataSource: ['solscan']
+                dataSource: ["solscan"]
             };
 
             this.setCachedData(cacheKey, result);
             return result;
         } catch (error) {
-            console.warn('[MarketDataCollector] Solscan API error:', error);
+            console.warn("[MarketDataCollector] Solscan API error:", error);
         }
 
         return { dataSource: [] };
@@ -534,7 +540,7 @@ export class EnhancedMarketDataCollector {
      */
     private mergeMarketData(target: EnhancedTokenMetadata, source: Partial<EnhancedTokenMetadata>): void {
         for (const [key, value] of Object.entries(source)) {
-            if (value !== undefined && value !== null && key !== 'dataSource') {
+            if (value !== undefined && value !== null && key !== "dataSource") {
                 // Only update if target doesn't have the value or source is higher priority
                 if (target[key as keyof EnhancedTokenMetadata] === undefined) {
                     (target as any)[key] = value;
@@ -585,39 +591,39 @@ export class EnhancedMarketDataCollector {
         // Liquidity risk assessment
         if (data.liquidity !== undefined) {
             if (data.liquidity < 10000) {
-                data.liquidityRisk = 'high';
+                data.liquidityRisk = "high";
             } else if (data.liquidity < 100000) {
-                data.liquidityRisk = 'medium';
+                data.liquidityRisk = "medium";
             } else {
-                data.liquidityRisk = 'low';
+                data.liquidityRisk = "low";
             }
         }
 
         // Rug pull risk assessment (simplified)
         let rugRiskScore = 0;
-        
+
         // Check if there's a website
         if (!data.website) rugRiskScore += 1;
-        
+
         // Check social presence
         if (!data.twitter && !data.telegram) rugRiskScore += 1;
-        
+
         // Check liquidity
         if (data.liquidity && data.liquidity < 50000) rugRiskScore += 1;
-        
+
         // Check holder count
         if (data.holdersCount && data.holdersCount < 100) rugRiskScore += 1;
 
         if (rugRiskScore >= 3) {
-            data.rugPullRisk = 'high';
+            data.rugPullRisk = "high";
         } else if (rugRiskScore >= 2) {
-            data.rugPullRisk = 'medium';
+            data.rugPullRisk = "medium";
         } else {
-            data.rugPullRisk = 'low';
+            data.rugPullRisk = "low";
         }
 
         // Concentration risk (would need holder distribution data)
-        data.concentrationRisk = 'medium'; // Default until we have more data
+        data.concentrationRisk = "medium"; // Default until we have more data
     }
 
     /**
@@ -633,13 +639,13 @@ export class EnhancedMarketDataCollector {
 
         // Data completeness (max 7 points)
         const importantFields = [
-            'price', 'volume24h', 'marketCap', 'liquidity', 'name', 'symbol', 'holdersCount'
+            "price", "volume24h", "marketCap", "liquidity", "name", "symbol", "holdersCount"
         ];
-        
-        const completedFields = importantFields.filter(field => 
+
+        const completedFields = importantFields.filter(field =>
             data[field as keyof EnhancedTokenMetadata] !== undefined
         ).length;
-        
+
         score += (completedFields / importantFields.length) * 7;
 
         return Math.min(score / maxScore, 1);
@@ -682,7 +688,7 @@ export class EnhancedMarketDataCollector {
      */
     async getHistoricalData(
         tokenAddress: string,
-        timeframe: '1h' | '24h' | '7d' | '30d' = '24h'
+        timeframe: "1h" | "24h" | "7d" | "30d" = "24h"
     ): Promise<{ timestamp: number; price: number; volume: number }[]> {
         // This would implement historical data fetching
         // For now, return empty array
@@ -704,15 +710,15 @@ export class EnhancedMarketDataCollector {
     /**
      * Export collected data for analysis
      */
-    exportMarketData(data: EnhancedTokenMetadata, format: 'json' | 'csv' = 'json'): string {
-        if (format === 'json') {
+    exportMarketData(data: EnhancedTokenMetadata, format: "json" | "csv" = "json"): string {
+        if (format === "json") {
             return JSON.stringify(data, null, 2);
         } else {
             // Convert to CSV format
-            const headers = Object.keys(data).join(',');
-            const values = Object.values(data).map(v => 
-                typeof v === 'object' ? JSON.stringify(v) : v
-            ).join(',');
+            const headers = Object.keys(data).join(",");
+            const values = Object.values(data).map(v =>
+                typeof v === "object" ? JSON.stringify(v) : v
+            ).join(",");
             return `${headers}\n${values}`;
         }
     }

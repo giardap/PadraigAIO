@@ -1,12 +1,18 @@
+/*
+ * Vencord, a Discord client mod
+ * Copyright (c) 2025 Vendicated and contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
 // NATIVE.TS - Enhanced with working IPFS upload integration from test plugin
 // Fixed: Vencord frame wrapping + working pump.fun IPFS uploads
 
 import bs58 from "bs58";
-import https from "https";
-import zlib from "zlib";
 import fs from "fs";
-import path from "path";
+import https from "https";
 import { tmpdir } from "os";
+import path from "path";
+import zlib from "zlib";
 
 export function generateSolanaKeypair(): string {
     const { Keypair } = require("@solana/web3.js");
@@ -17,7 +23,7 @@ export function generateSolanaKeypair(): string {
 // File-based storage helper for native context (from working test plugin)
 class NativeFileStorage {
     private getUploadFilePath(): string {
-        return path.join(tmpdir(), 'pump_portal_upload_request.json');
+        return path.join(tmpdir(), "pump_portal_upload_request.json");
     }
 
     async storeUploadData(imageData: string, metadata: any): Promise<boolean> {
@@ -27,10 +33,10 @@ class NativeFileStorage {
                 metadata,
                 timestamp: Date.now()
             };
-            
+
             const filePath = this.getUploadFilePath();
-            fs.writeFileSync(filePath, JSON.stringify(uploadData), 'utf8');
-            
+            fs.writeFileSync(filePath, JSON.stringify(uploadData), "utf8");
+
             return true;
         } catch (error) {
             return false;
@@ -50,21 +56,21 @@ class NativeFileStorage {
     } | null> {
         try {
             const filePath = this.getUploadFilePath();
-            
+
             if (!fs.existsSync(filePath)) {
                 return null;
             }
-            
-            const fileContent = fs.readFileSync(filePath, 'utf8');
+
+            const fileContent = fs.readFileSync(filePath, "utf8");
             const uploadData = JSON.parse(fileContent);
-            
+
             if (uploadData && uploadData.imageData && uploadData.metadata) {
                 return {
                     imageData: uploadData.imageData,
                     metadata: uploadData.metadata
                 };
             }
-            
+
             return null;
         } catch (error) {
             return null;
@@ -87,17 +93,17 @@ const nativeFileStorage = new NativeFileStorage();
 
 // Enhanced URL validation helper function
 function validateAndCleanUrl(inputUrl: any): string {
-    const urlString = String(inputUrl || '');
-    
-    if (!urlString || urlString === 'null' || urlString === 'undefined') {
+    const urlString = String(inputUrl || "");
+
+    if (!urlString || urlString === "null" || urlString === "undefined") {
         return "https://pumpportal.fun";
     }
-    
-    if (urlString.startsWith('@') && urlString.length > 30) {
+
+    if (urlString.startsWith("@") && urlString.length > 30) {
         return "https://pumpportal.fun";
     }
-    
-    if (urlString && typeof urlString === 'string') {
+
+    if (urlString && typeof urlString === "string") {
         const descriptionPatterns = [
             /speaks with/i,
             /tells the true story/i,
@@ -109,53 +115,53 @@ function validateAndCleanUrl(inputUrl: any): string {
             /Bro there is no token/i,
             /none in my believe/i,
         ];
-        
-        const looksLikeDescription = descriptionPatterns.some(pattern => pattern.test(urlString)) || 
-                                   (urlString.length > 100 && !urlString.includes('http') && !urlString.includes('.com')) ||
-                                   (urlString.startsWith('@') && urlString.length > 30 && !urlString.includes('http'));
-        
+
+        const looksLikeDescription = descriptionPatterns.some(pattern => pattern.test(urlString)) ||
+                                   (urlString.length > 100 && !urlString.includes("http") && !urlString.includes(".com")) ||
+                                   (urlString.startsWith("@") && urlString.length > 30 && !urlString.includes("http"));
+
         if (looksLikeDescription) {
             return "https://pumpportal.fun";
         }
     }
-    
+
     const cleanInput = urlString.trim();
-    
+
     if (cleanInput.length < 10) {
         return "https://pumpportal.fun";
     }
-    
-    if (cleanInput.length > 200 || cleanInput.includes(' ') || cleanInput.includes('\n')) {
+
+    if (cleanInput.length > 200 || cleanInput.includes(" ") || cleanInput.includes("\n")) {
         const urlPatterns = [
             /https?:\/\/(?:twitter\.com|x\.com|t\.co|trib\.al|pumpportal\.fun)\/[^\s\n\]]+/g,
             /https?:\/\/[^\s\n\]]+/g
         ];
-        
+
         for (const pattern of urlPatterns) {
             const matches = cleanInput.match(pattern);
             if (matches && matches.length > 0) {
-                const extractedUrl = matches[0].replace(/[.,!?;:]+$/, '');
-                
+                const extractedUrl = matches[0].replace(/[.,!?;:]+$/, "");
+
                 if (isValidUrl(extractedUrl)) {
                     return extractedUrl;
                 }
             }
         }
-        
+
         return "https://pumpportal.fun";
     }
-    
+
     if (isValidUrl(cleanInput)) {
         return cleanInput;
     }
-    
-    if (!cleanInput.startsWith('http://') && !cleanInput.startsWith('https://')) {
-        const urlWithProtocol = 'https://' + cleanInput;
+
+    if (!cleanInput.startsWith("http://") && !cleanInput.startsWith("https://")) {
+        const urlWithProtocol = "https://" + cleanInput;
         if (isValidUrl(urlWithProtocol)) {
             return urlWithProtocol;
         }
     }
-    
+
     return "https://pumpportal.fun";
 }
 
@@ -172,8 +178,8 @@ function isValidUrl(url: string): boolean {
 async function downloadImageFromUrl(imageUrl: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
         let finalUrl = imageUrl;
-        
-        if (imageUrl.includes('images-ext-') && imageUrl.includes('discordapp.net/external/')) {
+
+        if (imageUrl.includes("images-ext-") && imageUrl.includes("discordapp.net/external/")) {
             const match = imageUrl.match(/\/external\/[^\/]+\/(https?)\/(.+)$/);
             if (match) {
                 const protocol = match[1];
@@ -182,14 +188,14 @@ async function downloadImageFromUrl(imageUrl: string): Promise<Buffer> {
             } else {
                 const altMatch = imageUrl.match(/\/external\/[^\/]+\/(.+)$/);
                 if (altMatch) {
-                    let extractedPart = altMatch[1];
-                    if (extractedPart.startsWith('https') || extractedPart.startsWith('http')) {
-                        finalUrl = extractedPart.replace('/', '://');
+                    const extractedPart = altMatch[1];
+                    if (extractedPart.startsWith("https") || extractedPart.startsWith("http")) {
+                        finalUrl = extractedPart.replace("/", "://");
                     }
                 }
             }
         }
-        
+
         let url: URL;
         try {
             url = new URL(finalUrl);
@@ -206,7 +212,7 @@ async function downloadImageFromUrl(imageUrl: string): Promise<Buffer> {
                 return;
             }
         }
-        
+
         const options = {
             hostname: url.hostname,
             path: url.pathname + url.search,
@@ -218,36 +224,36 @@ async function downloadImageFromUrl(imageUrl: string): Promise<Buffer> {
             },
             timeout: 30000
         };
-        
-        const protocol = url.protocol === 'https:' ? https : require('http');
-        
+
+        const protocol = url.protocol === "https:" ? https : require("http");
+
         const req = protocol.request(options, (res: any) => {
             if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
                 reject(new Error(`HTTP ${res.statusCode}: Failed to download image from ${finalUrl}`));
                 return;
             }
-            
+
             const chunks: Buffer[] = [];
-            
-            res.on('data', (chunk: Buffer) => {
+
+            res.on("data", (chunk: Buffer) => {
                 chunks.push(chunk);
             });
-            
-            res.on('end', () => {
+
+            res.on("end", () => {
                 const imageBuffer = Buffer.concat(chunks);
                 resolve(imageBuffer);
             });
         });
-        
-        req.on('error', (err: Error) => {
+
+        req.on("error", (err: Error) => {
             reject(new Error(`Download failed: ${err.message}`));
         });
-        
-        req.on('timeout', () => {
+
+        req.on("timeout", () => {
             req.destroy();
             reject(new Error("Download timeout"));
         });
-        
+
         req.end();
     });
 }
@@ -277,15 +283,15 @@ function detectImageType(imageBuffer: Buffer): { type: string; extension: string
     }
 
     const header = imageBuffer.subarray(0, 8);
-    
+
     if (header[0] === 0xFF && header[1] === 0xD8 && header[2] === 0xFF) {
         return { type: "image/jpeg", extension: "jpg" };
     }
-    
+
     if (header[0] === 0x89 && header[1] === 0x50 && header[2] === 0x4E && header[3] === 0x47) {
         return { type: "image/png", extension: "png" };
     }
-    
+
     return { type: "image/png", extension: "png" };
 }
 
@@ -307,7 +313,7 @@ function uploadToPumpFun(body: Buffer, contentType: string): Promise<{ uri: stri
             "Sec-Fetch-Site": "same-origin",
             "Cache-Control": "no-cache"
         };
-        
+
         const options = {
             hostname: "pump.fun",
             path: "/api/ipfs",
@@ -315,32 +321,32 @@ function uploadToPumpFun(body: Buffer, contentType: string): Promise<{ uri: stri
             headers: headers,
             timeout: 60000
         };
-        
+
         const req = https.request(options, res => {
             let data = Buffer.alloc(0);
-            
+
             res.on("data", chunk => {
                 data = Buffer.concat([data, chunk]);
             });
-            
+
             res.on("end", () => {
                 try {
                     let responseText: string;
-                    
-                    const encoding = res.headers['content-encoding'];
-                    if (encoding === 'gzip') {
-                        responseText = zlib.gunzipSync(data).toString('utf8');
-                    } else if (encoding === 'deflate') {
-                        responseText = zlib.inflateSync(data).toString('utf8');
-                    } else if (encoding === 'br') {
-                        responseText = zlib.brotliDecompressSync(data).toString('utf8');
+
+                    const encoding = res.headers["content-encoding"];
+                    if (encoding === "gzip") {
+                        responseText = zlib.gunzipSync(data).toString("utf8");
+                    } else if (encoding === "deflate") {
+                        responseText = zlib.inflateSync(data).toString("utf8");
+                    } else if (encoding === "br") {
+                        responseText = zlib.brotliDecompressSync(data).toString("utf8");
                     } else {
-                        responseText = data.toString('utf8');
+                        responseText = data.toString("utf8");
                     }
-                    
+
                     if (res.statusCode !== 200) {
-                        if (responseText.includes('<!DOCTYPE html>')) {
-                            if (responseText.includes('Cloudflare') || responseText.includes('cf-ray')) {
+                        if (responseText.includes("<!DOCTYPE html>")) {
+                            if (responseText.includes("Cloudflare") || responseText.includes("cf-ray")) {
                                 reject(new Error("Cloudflare protection detected"));
                                 return;
                             }
@@ -350,7 +356,7 @@ function uploadToPumpFun(body: Buffer, contentType: string): Promise<{ uri: stri
                         reject(new Error(`HTTP ${res.statusCode}: ${responseText.substring(0, 200)}`));
                         return;
                     }
-                    
+
                     let parsed;
                     try {
                         parsed = JSON.parse(responseText);
@@ -358,44 +364,44 @@ function uploadToPumpFun(body: Buffer, contentType: string): Promise<{ uri: stri
                         reject(new Error(`Failed to parse JSON response: ${parseError.message}. Response: ${responseText.substring(0, 100)}`));
                         return;
                     }
-                    
+
                     if (parsed.metadataUri && parsed.metadata) {
                         resolve({ uri: parsed.metadataUri, metadata: parsed.metadata });
                     } else {
                         reject(new Error(`Invalid response structure: ${JSON.stringify(parsed)}`));
                     }
-                    
+
                 } catch (parseError) {
                     reject(new Error(`Parse error: ${parseError.message}`));
                 }
             });
         });
-        
+
         req.on("error", err => {
             reject(new Error(`Request error: ${err.message}`));
         });
-        
+
         req.on("timeout", () => {
             req.destroy();
             reject(new Error("Request timeout"));
         });
-        
+
         const chunkSize = 64 * 1024;
         let offset = 0;
-        
+
         const writeChunk = () => {
             if (offset >= body.length) {
                 req.end();
                 return;
             }
-            
+
             const chunk = body.subarray(offset, Math.min(offset + chunkSize, body.length));
             req.write(chunk);
             offset += chunk.length;
-            
+
             setImmediate(writeChunk);
         };
-        
+
         writeChunk();
     });
 }
@@ -404,12 +410,12 @@ function uploadToPumpFun(body: Buffer, contentType: string): Promise<{ uri: stri
 export async function storeUploadData(...args: any[]): Promise<boolean> {
     try {
         let actualParams: any;
-        
+
         if (args.length >= 2) {
             actualParams = args[1];
         } else if (args.length === 1) {
             const firstArg = args[0];
-            if (firstArg && typeof firstArg === 'object' && firstArg.type === 'frame') {
+            if (firstArg && typeof firstArg === "object" && firstArg.type === "frame") {
                 throw new Error("Received frame object but no actual parameters");
             } else {
                 actualParams = firstArg;
@@ -417,11 +423,11 @@ export async function storeUploadData(...args: any[]): Promise<boolean> {
         } else {
             throw new Error("No parameters received");
         }
-        
+
         let imageData: string;
         let metadata: any;
-        
-        if (typeof actualParams === 'object' && actualParams !== null) {
+
+        if (typeof actualParams === "object" && actualParams !== null) {
             if (actualParams.imageData && actualParams.metadata) {
                 imageData = actualParams.imageData;
                 metadata = actualParams.metadata;
@@ -431,100 +437,100 @@ export async function storeUploadData(...args: any[]): Promise<boolean> {
         } else {
             throw new Error(`Expected object with imageData and metadata, got ${typeof actualParams}`);
         }
-        
-        if (!imageData || typeof imageData !== 'string') {
+
+        if (!imageData || typeof imageData !== "string") {
             throw new Error(`Invalid imageData: expected string, got ${typeof imageData} (${String(imageData).substring(0, 50)}...)`);
         }
-        
-        if (!metadata || typeof metadata !== 'object') {
+
+        if (!metadata || typeof metadata !== "object") {
             throw new Error(`Invalid metadata: expected object, got ${typeof metadata} (${String(metadata)})`);
         }
-        
+
         return await nativeFileStorage.storeUploadData(imageData, metadata);
     } catch (error) {
         throw new Error(`StoreUploadData failed: ${error.message}`);
     }
 }
 
-// NEW: Step 2 - Process upload from temp file  
+// NEW: Step 2 - Process upload from temp file
 export async function processUpload(): Promise<{ metadataUri: string; debugMetadata: string }> {
     try {
         const uploadStartTime = Date.now();
-        
+
         const stored = await nativeFileStorage.getCurrentUploadRequest();
-        
+
         if (!stored) {
-            throw new Error(`No current upload request found in temp file`);
+            throw new Error("No current upload request found in temp file");
         }
-        
+
         const { imageData, metadata } = stored;
         const { name, symbol, filename, description, website, mint } = metadata;
-        
-        if (!imageData || typeof imageData !== 'string') {
+
+        if (!imageData || typeof imageData !== "string") {
             throw new Error(`Invalid imageData: expected string, got ${typeof imageData} (${imageData})`);
         }
-        
-        if (!metadata || typeof metadata !== 'object') {
+
+        if (!metadata || typeof metadata !== "object") {
             throw new Error(`Invalid metadata: expected object, got ${typeof metadata}`);
         }
-        
+
         if (!name || !symbol || !filename) {
             throw new Error(`Missing required metadata fields: name=${name}, symbol=${symbol}, filename=${filename}`);
         }
-        
+
         let imageBuffer: Buffer;
-        
+
         const imageDataStr = String(imageData);
-        
-        if (imageDataStr.startsWith('data:')) {
+
+        if (imageDataStr.startsWith("data:")) {
             const match = imageDataStr.match(/^data:([^;]+);base64,(.+)$/);
             if (!match) {
                 throw new Error("Invalid data URL format from storage");
             }
-            
+
             const base64Data = match[2];
             if (!base64Data || base64Data.length === 0) {
                 throw new Error("Empty base64 data in data URL");
             }
-            
+
             try {
-                imageBuffer = Buffer.from(base64Data, 'base64');
+                imageBuffer = Buffer.from(base64Data, "base64");
             } catch (base64Error) {
                 throw new Error(`Failed to decode base64 data: ${base64Error.message}`);
             }
-            
-        } else if (imageDataStr.startsWith('http')) {
+
+        } else if (imageDataStr.startsWith("http")) {
             imageBuffer = await downloadImageFromUrl(imageDataStr);
         } else {
             throw new Error(`Invalid image data format: must start with 'data:' or 'http', got: ${imageDataStr.substring(0, 50)}...`);
         }
-        
+
         if (!imageBuffer || imageBuffer.length === 0) {
             throw new Error("Failed to create image buffer or buffer is empty");
         }
-        
+
         const maxImageSize = 2 * 1024 * 1024;
         if (imageBuffer.length > maxImageSize) {
             imageBuffer = await optimizeImageBuffer(imageBuffer, maxImageSize);
         }
-        
+
         const boundary = "----WebKitFormBoundary" + Math.random().toString(36).substring(2, 15);
         const formParts: Buffer[] = [];
-        
+
         const appendField = (fieldName: string, value: string) => {
             formParts.push(Buffer.from(`--${boundary}\r\n`));
             formParts.push(Buffer.from(`Content-Disposition: form-data; name="${fieldName}"\r\n\r\n`));
             formParts.push(Buffer.from(`${String(value)}\r\n`));
         };
-        
+
         const { type: contentType } = detectImageType(imageBuffer);
-        
+
         formParts.push(Buffer.from(`--${boundary}\r\n`));
         formParts.push(Buffer.from(`Content-Disposition: form-data; name="file"; filename="${String(filename)}"\r\n`));
         formParts.push(Buffer.from(`Content-Type: ${contentType}\r\n\r\n`));
         formParts.push(imageBuffer);
-        formParts.push(Buffer.from(`\r\n`));
-        
+        formParts.push(Buffer.from("\r\n"));
+
         appendField("name", String(name));
         appendField("symbol", String(symbol));
         appendField("description", String(description));
@@ -532,18 +538,18 @@ export async function processUpload(): Promise<{ metadataUri: string; debugMetad
         appendField("telegram", String(website));
         appendField("website", String(website));
         appendField("showName", "true");
-        
+
         formParts.push(Buffer.from(`--${boundary}--\r\n`));
-        
+
         const body = Buffer.concat(formParts);
         const formContentType = `multipart/form-data; boundary=${boundary}`;
-        
+
         const result = await uploadToPumpFun(body, formContentType);
-        
+
         const processingTime = Date.now() - uploadStartTime;
-        
+
         nativeFileStorage.clearUploadRequest();
-        
+
         return {
             metadataUri: result.uri,
             debugMetadata: JSON.stringify({
@@ -551,8 +557,8 @@ export async function processUpload(): Promise<{ metadataUri: string; debugMetad
                 testInfo: {
                     approach: "enhanced-two-step-integrated",
                     step1: "storeUploadData (handles Vencord frame + object wrapping)",
-                    step2: "processUpload", 
-                    imageSource: imageDataStr.startsWith('data:') ? 'data-url' : 'remote-url',
+                    step2: "processUpload",
+                    imageSource: imageDataStr.startsWith("data:") ? "data-url" : "remote-url",
                     originalImageDataLength: imageDataStr.length,
                     processedImageSize: imageBuffer.length,
                     processingTime: processingTime,
@@ -566,16 +572,16 @@ export async function processUpload(): Promise<{ metadataUri: string; debugMetad
                 }
             }, null, 2)
         };
-        
+
     } catch (error: any) {
         nativeFileStorage.clearUploadRequest();
-        
+
         const errorDetails = {
             message: error.message,
             stack: error.stack,
             timestamp: new Date().toISOString()
         };
-        
+
         throw new Error(`ProcessUpload failed: ${error.message}`);
     }
 }
@@ -590,9 +596,9 @@ export async function uploadMetadataComplete(
     tweetUrl: string,
     mint: string
 ): Promise<{ metadataUri: string; debugMetadata: string }> {
-    
+
     const cleanTweetUrl = validateAndCleanUrl(tweetUrl);
-    
+
     try {
         // Use the new two-step approach internally
         const success = await nativeFileStorage.storeUploadData(imageUrl, {
@@ -603,14 +609,14 @@ export async function uploadMetadataComplete(
             website: cleanTweetUrl,
             mint
         });
-        
+
         if (!success) {
             throw new Error("Failed to store upload data");
         }
-        
+
         const result = await processUpload();
         return result;
-        
+
     } catch (error) {
         throw error;
     }
@@ -626,7 +632,7 @@ export async function testImageDownload(imageUrl: string): Promise<{
     try {
         const buffer = await downloadImageFromUrl(imageUrl);
         const { type } = detectImageType(buffer);
-        
+
         return {
             success: true,
             size: buffer.length,
@@ -649,7 +655,7 @@ export function testImageDetection(imageBuffer: Buffer): {
     isValid: boolean;
 } {
     const { type, extension } = detectImageType(imageBuffer);
-    
+
     return {
         type,
         extension,
@@ -681,17 +687,17 @@ export async function uploadMetadataFromFile(
     tweetUrl: string,
     mint: string
 ): Promise<{ metadataUri: string; debugMetadata: string }> {
-    
+
     try {
         if (!fs.existsSync(filePath)) {
             throw new Error("File not found: " + filePath);
         }
-        
+
         const imageBuffer = fs.readFileSync(filePath);
-        const base64 = imageBuffer.toString('base64');
-        const mimeType = originalFilename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+        const base64 = imageBuffer.toString("base64");
+        const mimeType = originalFilename.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
         const dataUrl = `data:${mimeType};base64,${base64}`;
-        
+
         const result = await uploadMetadataComplete(
             name,
             symbol,
@@ -701,15 +707,15 @@ export async function uploadMetadataFromFile(
             tweetUrl,
             mint
         );
-        
+
         try {
             fs.unlinkSync(filePath);
         } catch (cleanupError) {
             // Ignore cleanup errors
         }
-        
+
         return result;
-        
+
     } catch (error) {
         throw error;
     }

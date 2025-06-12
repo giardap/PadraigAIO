@@ -1,3 +1,9 @@
+/*
+ * Vencord, a Discord client mod
+ * Copyright (c) 2025 Vendicated and contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
 import { React } from "@webpack/common";
 
 // Toast notification types
@@ -74,7 +80,7 @@ export const toastManager = new ToastManagerClass();
 const BRAND_COLORS = {
     primary: "#F2F0E8",
     success: "#38B2AC",
-    warning: "#FBB040", 
+    warning: "#FBB040",
     danger: "#E53E3E",
     text: "#2D3748",
     textMuted: "#718096"
@@ -113,7 +119,7 @@ export function ToastNotification({ toast, onRemove }: { toast: Toast; onRemove:
             case "error":
                 return {
                     ...baseStyles,
-                    backgroundColor: BRAND_COLORS.danger + "20", 
+                    backgroundColor: BRAND_COLORS.danger + "20",
                     borderColor: BRAND_COLORS.danger,
                     color: BRAND_COLORS.danger
                 };
@@ -158,7 +164,7 @@ export function ToastNotification({ toast, onRemove }: { toast: Toast; onRemove:
                 {toast.message}
             </div>
             <button
-                onClick={(e) => {
+                onClick={e => {
                     e.stopPropagation();
                     onRemove(toast.id);
                 }}
@@ -173,8 +179,8 @@ export function ToastNotification({ toast, onRemove }: { toast: Toast; onRemove:
                     opacity: 0.7,
                     fontSize: "12px"
                 }}
-                onMouseEnter={(e) => { (e.target as HTMLElement).style.opacity = "1"; }}
-                onMouseLeave={(e) => { (e.target as HTMLElement).style.opacity = "0.7"; }}
+                onMouseEnter={e => { (e.target as HTMLElement).style.opacity = "1"; }}
+                onMouseLeave={e => { (e.target as HTMLElement).style.opacity = "0.7"; }}
             >
                 ✕
             </button>

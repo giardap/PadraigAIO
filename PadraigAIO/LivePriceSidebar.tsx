@@ -1,6 +1,13 @@
+/*
+ * Vencord, a Discord client mod
+ * Copyright (c) 2025 Vendicated and contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
 import { React } from "@webpack/common";
+
 import { marketDataCollector } from "./marketDataUtils";
-import { getStoredWallets, getStoredTokenBalances, getCreatedCoins } from "./storageHelper";
+import { getCreatedCoins,getStoredTokenBalances, getStoredWallets } from "./storageHelper";
 import { showToast } from "./ToastManager";
 
 // Brand colors for consistency
@@ -75,7 +82,7 @@ export function LivePriceSidebar({ isVisible, onToggle }: LivePriceSidebarProps)
 
             // Add created coins
             for (const coin of createdCoins) {
-                if (coin.status === 'confirmed') {
+                if (coin.status === "confirmed") {
                     allTokens.set(coin.contractAddress, {
                         address: coin.contractAddress,
                         symbol: coin.symbol,
@@ -125,7 +132,7 @@ export function LivePriceSidebar({ isVisible, onToggle }: LivePriceSidebarProps)
 
     const loadPricesForTokens = async (tokens: TrackedToken[]) => {
         const updatedTokens = await Promise.all(
-            tokens.map(async (token) => {
+            tokens.map(async token => {
                 try {
                     const data = await marketDataCollector.collectComprehensiveMarketData(token.address, {
                         includeOnChain: false,
@@ -149,7 +156,7 @@ export function LivePriceSidebar({ isVisible, onToggle }: LivePriceSidebarProps)
         );
 
         setTrackedTokens(updatedTokens);
-        
+
         // Calculate total portfolio value
         const totalValue = updatedTokens.reduce((sum, token) => {
             return sum + (token.value || 0);
@@ -188,10 +195,10 @@ export function LivePriceSidebar({ isVisible, onToggle }: LivePriceSidebarProps)
         if (percent === undefined || percent === null || isNaN(percent)) {
             return { text: "N/A", color: BRAND_COLORS.textMuted };
         }
-        
+
         const isPositive = percent >= 0;
         return {
-            text: `${isPositive ? '+' : ''}${percent.toFixed(2)}%`,
+            text: `${isPositive ? "+" : ""}${percent.toFixed(2)}%`,
             color: isPositive ? BRAND_COLORS.success : BRAND_COLORS.danger
         };
     };
@@ -326,7 +333,7 @@ export function LivePriceSidebar({ isVisible, onToggle }: LivePriceSidebarProps)
                         }}>
                             💰 Holdings
                         </div>
-                        
+
                         {trackedTokens.map(token => (
                             <div
                                 key={token.address}
@@ -365,7 +372,7 @@ export function LivePriceSidebar({ isVisible, onToggle }: LivePriceSidebarProps)
                                         {formatPrice(token.price)}
                                     </div>
                                 </div>
-                                
+
                                 <div style={{
                                     display: "flex",
                                     justifyContent: "space-between",
@@ -374,14 +381,14 @@ export function LivePriceSidebar({ isVisible, onToggle }: LivePriceSidebarProps)
                                     <span style={{ color: BRAND_COLORS.textMuted }}>
                                         {token.balance ? `${token.balance.toLocaleString()} tokens` : formatAddress(token.address)}
                                     </span>
-                                    <span style={{ 
+                                    <span style={{
                                         color: formatPercentage(token.priceChange24h).color,
                                         fontWeight: "600"
                                     }}>
                                         {formatPercentage(token.priceChange24h).text}
                                     </span>
                                 </div>
-                                
+
                                 {token.value && (
                                     <div style={{
                                         fontSize: "11px",
@@ -427,13 +434,33 @@ export function LivePriceSidebar({ isVisible, onToggle }: LivePriceSidebarProps)
                 >
                     {loading ? "🔄" : "🔄 Refresh"}
                 </button>
-                
+
                 <div style={{
                     fontSize: "10px",
                     color: BRAND_COLORS.textMuted
                 }}>
                     Auto-refresh: 30s
                 </div>
+
+                <a
+                    href="https://x.com/padraigtools"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                        fontSize: "9px",
+                        color: "#ffffff",
+                        opacity: 0.8,
+                        marginTop: "8px",
+                        textAlign: "center",
+                        textDecoration: "none",
+                        display: "block",
+                        transition: "opacity 0.2s ease"
+                    }}
+                    onMouseEnter={(e) => { (e.target as HTMLElement).style.opacity = "1"; }}
+                    onMouseLeave={(e) => { (e.target as HTMLElement).style.opacity = "0.8"; }}
+                >
+                    Made by Padraig (@PadraigTools)
+                </a>
             </div>
         </div>
     );

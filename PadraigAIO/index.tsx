@@ -5,14 +5,16 @@
  */
 
 import { openModal } from "@utils/modal";
-import definePlugin from "@utils/types";
-import { React } from "@webpack/common";
+import definePlugin, { PluginAuthor } from "@utils/types";
+import { React, ReactDOM } from "@webpack/common";
 
 import { addressDetector } from "./addressUtils";
 import { BuySellModal } from "./BuySellModal";
 import { CoinModal } from "./CoinModal";
+import { LivePriceSidebar } from "./LivePriceSidebar";
 import { StandaloneTradingSettingsModal } from "./StandaloneTradingSettingsModal";
 import { storageManager } from "./storageHelper";
+import { ToastContainer } from "./ToastManager";
 import { WalletModal } from "./WalletModal";
 import { WelcomePopup } from "./WelcomePopup";
 
@@ -50,7 +52,7 @@ try {
 export default definePlugin({
     name: "CreateCoinFromTweet",
     description: "PadraigAIO",
-    authors: ["Padraig"],
+    authors: [{ name: "Padraig" } as PluginAuthor],
 
     start() {
         console.log("[PumpPortalPlugin] Starting enhanced unified plugin by Padraig (@PadraigTools)...");
@@ -78,6 +80,7 @@ export default definePlugin({
 
             if (containers.length > 0) {
                 const container = containers[0];
+                if (!container) return;
 
                 // Create enhanced branding container
                 const brandingContainer = document.createElement("div");
@@ -307,11 +310,25 @@ export default definePlugin({
         // Add buttons immediately
         addPersistentButtons();
 
+        // Mount ToastContainer
+        this.mountToastContainer();
+
+        // Mount LivePriceSidebar
+        this.mountLivePriceSidebar();
+
         // Enhanced message observer with caching and CA detection
         const messageObserver = new MutationObserver(mutations => {
             // Re-add persistent buttons if they disappear
             if (!document.querySelector(".pump-persistent-button")) {
                 addPersistentButtons();
+            }
+
+            // Re-mount components if they disappear
+            if (!document.getElementById("padraig-toast-container")) {
+                this.mountToastContainer();
+            }
+            if (!document.getElementById("padraig-price-sidebar")) {
+                this.mountLivePriceSidebar();
             }
 
             // Enhanced inline button processing with CA detection
@@ -384,6 +401,186 @@ export default definePlugin({
 
         } catch (error) {
             console.error("[PumpPortalPlugin] Storage initialization failed:", error);
+        }
+    },
+
+    // Mount ToastContainer to DOM
+    mountToastContainer() {
+        try {
+            console.log("[PumpPortalPlugin] Mounting ToastContainer...");
+
+            // Remove existing toast container if it exists
+            const existingToastContainer = document.getElementById("padraig-toast-container");
+            if (existingToastContainer) {
+                existingToastContainer.remove();
+            }
+
+            // Create container for ToastContainer
+            const toastContainerDiv = document.createElement("div");
+            toastContainerDiv.id = "padraig-toast-container";
+            toastContainerDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 10000;
+                pointer-events: none;
+            `;
+
+            // Mount ToastContainer React component
+            const ToastContainerElement = React.createElement(ToastContainer, {});
+
+            // Add to DOM
+            document.body.appendChild(toastContainerDiv);
+
+            // Use createRoot (React 18+)
+            try {
+                const root = (ReactDOM as any).createRoot(toastContainerDiv);
+                root.render(ToastContainerElement);
+                this._toastRoot = root;
+            } catch (error) {
+                console.error("[PumpPortalPlugin] Error creating React root for ToastContainer:", error);
+            }
+
+            console.log("[PumpPortalPlugin] ToastContainer mounted successfully");
+        } catch (error) {
+            console.error("[PumpPortalPlugin] Error mounting ToastContainer:", error);
+        }
+    },
+
+    // Mount LivePriceSidebar to DOM
+    mountLivePriceSidebar() {
+        try {
+            console.log("[PumpPortalPlugin] Mounting LivePriceSidebar...");
+
+            // Remove existing sidebar if it exists
+            const existingSidebar = document.getElementById("padraig-price-sidebar");
+            if (existingSidebar) {
+                existingSidebar.remove();
+            }
+
+            // Create container for LivePriceSidebar
+            const sidebarContainerDiv = document.createElement("div");
+            sidebarContainerDiv.id = "padraig-price-sidebar";
+            sidebarContainerDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                right: 20px;
+                transform: translateY(-50%);
+                z-index: 9999;
+                transition: transform 0.3s ease;
+            `;
+
+            // State management for sidebar visibility
+            let isVisible = false;
+
+            // Mount LivePriceSidebar React component with state management
+            const LivePriceSidebarElement = React.createElement(LivePriceSidebar, {
+                isVisible: isVisible,
+                onToggle: () => {
+                    isVisible = !isVisible;
+                    sidebarContainerDiv.style.transform = isVisible
+                        ? "translateY(-50%) translateX(0)"
+                        : "translateY(-50%) translateX(calc(100% - 40px))";
+                }
+            });
+
+            // Add to DOM
+            document.body.appendChild(sidebarContainerDiv);
+
+            // Use createRoot (React 18+)
+            try {
+                const root = (ReactDOM as any).createRoot(sidebarContainerDiv);
+                root.render(LivePriceSidebarElement);
+                this._sidebarRoot = root;
+            } catch (error) {
+                console.error("[PumpPortalPlugin] Error creating React root for LivePriceSidebar:", error);
+            }
+
+            // Add toggle button to existing UI
+            this.addLivePriceSidebarToggle(() => {
+                isVisible = !isVisible;
+                const newElement = React.createElement(LivePriceSidebar, {
+                    isVisible: isVisible,
+                    onToggle: () => {
+                        isVisible = !isVisible;
+                        sidebarContainerDiv.style.transform = isVisible
+                            ? "translateY(-50%) translateX(0)"
+                            : "translateY(-50%) translateX(calc(100% - 40px))";
+                    }
+                });
+
+                if (this._sidebarRoot) {
+                    this._sidebarRoot.render(newElement);
+                } else {
+                    try {
+                        const root = (ReactDOM as any).createRoot(sidebarContainerDiv);
+                        root.render(newElement);
+                        this._sidebarRoot = root;
+                    } catch (error) {
+                        console.error("[PumpPortalPlugin] Error creating React root in toggle:", error);
+                    }
+                }
+            });
+
+            console.log("[PumpPortalPlugin] LivePriceSidebar mounted successfully");
+        } catch (error) {
+            console.error("[PumpPortalPlugin] Error mounting LivePriceSidebar:", error);
+        }
+    },
+
+    // Add toggle button for LivePriceSidebar
+    addLivePriceSidebarToggle(toggleCallback: () => void) {
+        try {
+            // Find the branding container where other buttons are
+            const brandingContainer = document.querySelector(".padraig-branding");
+            if (brandingContainer) {
+                // Check if toggle button already exists
+                const existingToggle = brandingContainer.querySelector(".price-sidebar-toggle");
+                if (existingToggle) {
+                    existingToggle.remove();
+                }
+
+                // Create toggle button
+                const toggleBtn = document.createElement("button");
+                toggleBtn.className = "pump-persistent-button price-sidebar-toggle";
+                toggleBtn.textContent = "📊Prices";
+                toggleBtn.style.cssText = `
+                    background: linear-gradient(135deg, ${BRAND_COLORS.success}, ${BRAND_COLORS.success}dd);
+                    color: #fff;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 6px 12px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                `;
+
+                // Add hover effects
+                toggleBtn.addEventListener("mouseenter", () => {
+                    toggleBtn.style.transform = "translateY(-1px)";
+                    toggleBtn.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+                });
+
+                toggleBtn.addEventListener("mouseleave", () => {
+                    toggleBtn.style.transform = "translateY(0)";
+                    toggleBtn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+                });
+
+                // Add click handler
+                toggleBtn.onclick = toggleCallback;
+
+                // Add to branding container
+                const buttonContainer = brandingContainer.querySelector("div");
+                if (buttonContainer) {
+                    buttonContainer.appendChild(toggleBtn);
+                }
+
+                console.log("[PumpPortalPlugin] LivePriceSidebar toggle button added");
+            }
+        } catch (error) {
+            console.error("[PumpPortalPlugin] Error adding LivePriceSidebar toggle:", error);
         }
     },
 
@@ -977,6 +1174,26 @@ export default definePlugin({
 
         // Clean up UI elements
         document.querySelectorAll(".pump-button-inline, .pump-persistent-button, .padraig-branding").forEach(el => el.remove());
+
+        // Clean up ToastContainer
+        const toastContainer = document.getElementById("padraig-toast-container");
+        if (toastContainer) {
+            if (this._toastRoot) {
+                this._toastRoot.unmount();
+                this._toastRoot = null;
+            }
+            toastContainer.remove();
+        }
+
+        // Clean up LivePriceSidebar
+        const sidebarContainer = document.getElementById("padraig-price-sidebar");
+        if (sidebarContainer) {
+            if (this._sidebarRoot) {
+                this._sidebarRoot.unmount();
+                this._sidebarRoot = null;
+            }
+            sidebarContainer.remove();
+        }
 
         // Disconnect observers
         this._cleanup?.();

@@ -160,6 +160,35 @@ export function CoinModal(props: any) {
         }
     }, [coinName, autoGenerateSymbol]);
 
+    // Add CSS animation for spinner when component mounts
+    React.useEffect(() => {
+        const addSpinnerAnimation = () => {
+            if (typeof document !== 'undefined' && !document.getElementById('vencord-spinner-animation')) {
+                const style = document.createElement('style');
+                style.id = 'vencord-spinner-animation';
+                style.textContent = `
+                    @keyframes rotation {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        };
+
+        // Add animation safely when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', addSpinnerAnimation);
+        } else {
+            addSpinnerAnimation();
+        }
+
+        return () => {
+            // Cleanup listener if component unmounts before DOM ready
+            document.removeEventListener('DOMContentLoaded', addSpinnerAnimation);
+        };
+    }, []);
+
     // Load wallets from enhanced storage and auto-select default
     React.useEffect(() => {
         const loadWalletsAndDefault = async () => {
@@ -399,7 +428,9 @@ export function CoinModal(props: any) {
         }
 
         setLoading(true);
-        setResponse("🚀 Starting token creation with IPFS upload...");
+        setLoadingStage("Preparing Image");
+        setLoadingProgress(5);
+        setResponse(null);
 
         const nameStr = coinName || "Untitled Coin";
         const symbolStr = symbol || "COIN";
@@ -430,13 +461,15 @@ export function CoinModal(props: any) {
                 throw new Error("Native plugin helpers not available. Make sure the plugin is properly loaded.");
             }
 
-            setResponse("🔑 Generating mint keypair...");
+            setLoadingStage("Generating Keypair");
+            setLoadingProgress(15);
             const mint = await generateSolanaKeypair();
             console.log("[CoinModal] Generated mint:", mint);
 
             // Enhanced image handling with storage integration
             if (selectedImageUrl) {
-                setResponse("📁 Checking cached images for faster processing...");
+                setLoadingStage("Processing Image");
+                setLoadingProgress(20);
                 
                 try {
                     // Try to use cached and optimized image first
@@ -540,10 +573,13 @@ export function CoinModal(props: any) {
             });
 
             // Record upload attempt
+            setLoadingStage("Uploading to IPFS");
+            setLoadingProgress(25);
             const uploadStartTime = Date.now();
             
             try {
                 // Step 1: Store upload data using working approach
+                setLoadingProgress(35);
                 await reactUploadStorage.storeUploadData(imageUrl, {
                     name: nameStr,
                     symbol: symbolStr,
@@ -585,7 +621,8 @@ export function CoinModal(props: any) {
                     });
 
                     console.log("[CoinModal] ✅ Integrated IPFS Upload successful! URI:", result.metadataUri);
-                    setResponse(`✅ Image uploaded to IPFS successfully!\n💰 Creating token with ${buyAmount} SOL dev buy (from settings)...`);
+                    setLoadingStage("Creating Token");
+                    setLoadingProgress(65);
 
                     // Continue with token creation...
                     const requestBody = {
@@ -608,6 +645,7 @@ export function CoinModal(props: any) {
                     try {
                         setResponse(`💰 Creating token transaction with ${buyAmount} SOL dev buy...`);
                         
+                        setLoadingProgress(75);
                         const createResponse = await fetch(`https://pumpportal.fun/api/trade?api-key=${selectedWalletObj.apiKey}`, {
                             method: "POST",
                             headers: {
@@ -642,6 +680,14 @@ export function CoinModal(props: any) {
                         await storeCreatedCoin(createdCoin);
 
                         if (createJson.signature) {
+                            setLoadingStage("Token Created!");
+                            setLoadingProgress(95);
+                            
+                            // Final success state
+                            setTimeout(() => {
+                                setLoadingStage("Success!");
+                                setLoadingProgress(100);
+                            }, 500);
                             const txUrl = `https://solscan.io/tx/${createJson.signature}`;
                             setResponse(`✅ Token created successfully! 🎉
 
@@ -766,6 +812,17 @@ Transaction:`);
             });
         } finally {
             setLoading(false);
+            // Keep loading stage visible for a moment if successful
+            if (loadingStage !== "Success!") {
+                setLoadingStage("");
+                setLoadingProgress(0);
+            } else {
+                // Clear success state after 3 seconds
+                setTimeout(() => {
+                    setLoadingStage("");
+                    setLoadingProgress(0);
+                }, 3000);
+            }
         }
     };
 
@@ -1309,20 +1366,68 @@ Transaction:`);
                     onClick={submit}
                     disabled={loading || !coinName || !symbol || (!image && !selectedImageUrl) || !selectedWalletObj?.apiKey}
                     style={{
-                        backgroundColor: loading || !coinName || !symbol || (!image && !selectedImageUrl) || !selectedWalletObj?.apiKey ? "#666" : BRAND_COLORS.accent3,
+                        backgroundColor: loading && loadingStage === "Success!" ? BRAND_COLORS.success : loading || !coinName || !symbol || (!image && !selectedImageUrl) || !selectedWalletObj?.apiKey ? "#666" : BRAND_COLORS.accent3,
                         color: loading || !coinName || !symbol || (!image && !selectedImageUrl) || !selectedWalletObj?.apiKey ? "#ccc" : "#fff",
                         fontWeight: "bold",
                         fontSize: "16px",
-                        padding: "14px 24px",
+                        padding: loading ? "20px 24px" : "14px 24px",
                         borderRadius: "12px",
                         border: "none",
                         width: "100%",
                         cursor: loading || !coinName || !symbol || (!image && !selectedImageUrl) || !selectedWalletObj?.apiKey ? "not-allowed" : "pointer",
                         opacity: loading || !coinName || !symbol || (!image && !selectedImageUrl) || !selectedWalletObj?.apiKey ? 0.7 : 1,
-                        transition: "all 0.2s ease"
+                        transition: "all 0.2s ease",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "12px"
                     }}
                 >
-                    {loading ? "Creating Token..." : `Create Coin ${usingCachedImage ? '(💾 Cached)' : ''} - Buy: ${buyAmount} SOL (from Settings)`}
+                    {loading ? (
+                        <>
+                            {/* Loading Stage with Spinner */}
+                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                <div style={{
+                                    width: "18px",
+                                    height: "18px",
+                                    border: `2px solid #fff`,
+                                    borderTop: `2px solid transparent`,
+                                    borderRadius: "50%",
+                                    animation: "rotation 1s linear infinite"
+                                }} />
+                                <span style={{ fontSize: "16px", fontWeight: "600" }}>
+                                    {loadingStage || "Processing..."}
+                                </span>
+                            </div>
+                            
+                            {/* Progress Bar */}
+                            <div style={{
+                                width: "100%",
+                                backgroundColor: "rgba(255,255,255,0.2)",
+                                borderRadius: "4px",
+                                height: "6px",
+                                overflow: "hidden"
+                            }}>
+                                <div style={{
+                                    width: `${loadingProgress}%`,
+                                    backgroundColor: loadingStage === "Success!" ? "#4ade80" : "#fff",
+                                    height: "100%",
+                                    borderRadius: "4px",
+                                    transition: "all 0.3s ease"
+                                }} />
+                            </div>
+                            
+                            {/* Progress Text */}
+                            <span style={{ 
+                                fontSize: "12px", 
+                                opacity: 0.8
+                            }}>
+                                {loadingProgress}% complete
+                            </span>
+                        </>
+                    ) : (
+                        `Create Coin ${usingCachedImage ? '(💾 Cached)' : ''} - Buy: ${buyAmount} SOL (from Settings)`
+                    )}
                 </button>
                 <Button
                     color={Button.Colors.TRANSPARENT}

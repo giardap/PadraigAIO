@@ -38,37 +38,6 @@ export function WelcomePopup(props: any) {
                     textAlign: "center",
                     position: "relative"
                 }}>
-                    {/* Close Button */}
-                    <button
-                        onClick={onClose}
-                        style={{
-                            position: "absolute",
-                            top: "15px",
-                            right: "15px",
-                            backgroundColor: "transparent",
-                            border: "none",
-                            color: "#b9bbbe",
-                            fontSize: "20px",
-                            cursor: "pointer",
-                            width: "30px",
-                            height: "30px",
-                            borderRadius: "50%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            transition: "all 0.2s ease"
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#40444b";
-                            e.currentTarget.style.color = "#ffffff";
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "transparent";
-                            e.currentTarget.style.color = "#b9bbbe";
-                        }}
-                    >
-                        ✕
-                    </button>
                     
                     {/* Logo Section */}
                     <div style={{ marginBottom: "24px" }}>
@@ -80,7 +49,6 @@ export function WelcomePopup(props: any) {
                                     width: "80px",
                                     height: "80px",
                                     borderRadius: "16px",
-                                    boxShadow: `0 8px 24px rgba(251, 176, 64, 0.3)`,
                                     objectFit: "cover",
                                     background: "#ffffff"
                                 }}
@@ -90,7 +58,6 @@ export function WelcomePopup(props: any) {
                                 width: "80px",
                                 height: "80px",
                                 borderRadius: "16px",
-                                boxShadow: `0 8px 24px rgba(251, 176, 64, 0.3)`,
                                 background: `linear-gradient(135deg, ${BRAND_COLORS.accent2}, ${BRAND_COLORS.accent3})`,
                                 display: "flex",
                                 alignItems: "center",
@@ -180,6 +147,73 @@ export function WelcomePopup(props: any) {
                         }}>
                             📊 Live Trading
                         </div>
+                    </div>
+                    
+                    {/* Social Links */}
+                    <div style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: "16px",
+                        marginBottom: "24px"
+                    }}>
+                        <a
+                            href="https://github.com/giardap"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px",
+                                padding: "8px 16px",
+                                backgroundColor: "#333333",
+                                color: "#ffffff",
+                                textDecoration: "none",
+                                borderRadius: "20px",
+                                fontSize: "13px",
+                                fontWeight: "600",
+                                transition: "all 0.2s ease",
+                                border: "1px solid #555555"
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = "#444444";
+                                e.currentTarget.style.transform = "translateY(-1px)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = "#333333";
+                                e.currentTarget.style.transform = "translateY(0)";
+                            }}
+                        >
+                            🐙 GitHub
+                        </a>
+                        <a
+                            href="https://x.com/padraigtools"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px",
+                                padding: "8px 16px",
+                                backgroundColor: "#1DA1F2",
+                                color: "#ffffff",
+                                textDecoration: "none",
+                                borderRadius: "20px",
+                                fontSize: "13px",
+                                fontWeight: "600",
+                                transition: "all 0.2s ease",
+                                border: "1px solid #1a91da"
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = "#1a91da";
+                                e.currentTarget.style.transform = "translateY(-1px)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = "#1DA1F2";
+                                e.currentTarget.style.transform = "translateY(0)";
+                            }}
+                        >
+                            🐦 X (Twitter)
+                        </a>
                     </div>
                     
                     {/* Action Button */}

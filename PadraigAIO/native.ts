@@ -406,6 +406,63 @@ function uploadToPumpFun(body: Buffer, contentType: string): Promise<{ uri: stri
     });
 }
 
+// Upload function for bonk.fun
+async function uploadToBonkFun(imageBuffer: Buffer, contentType: string, metadata: { name: string; symbol: string; description: string; website: string }): Promise<{ uri: string; metadata: any }> {
+    const { name, symbol, description, website } = metadata;
+    
+    // Step 1: Upload image to bonk.fun
+    const imageFormData = new FormData();
+    const imageBlob = new Blob([imageBuffer], { type: contentType.split(';')[0] });
+    imageFormData.append("image", imageBlob);
+
+    const imgResponse = await fetch("https://nft-storage.letsbonk22.workers.dev/upload/img", {
+        method: "POST",
+        body: imageFormData,
+    });
+    
+    if (!imgResponse.ok) {
+        throw new Error(`Failed to upload image to bonk.fun: ${imgResponse.statusText}`);
+    }
+    
+    const imgUri = await imgResponse.text();
+    console.log("[BonkFun] Image uploaded:", imgUri);
+
+    // Step 2: Upload metadata to bonk.fun
+    const metadataResponse = await fetch("https://nft-storage.letsbonk22.workers.dev/upload/meta", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            createdOn: "https://bonk.fun",
+            description: description,
+            image: imgUri,
+            name: name,
+            symbol: symbol,
+            website: website || "https://pumpportal.fun"
+        }),
+    });
+    
+    if (!metadataResponse.ok) {
+        throw new Error(`Failed to upload metadata to bonk.fun: ${metadataResponse.statusText}`);
+    }
+    
+    const metadataUri = await metadataResponse.text();
+    console.log("[BonkFun] Metadata uploaded:", metadataUri);
+
+    return {
+        uri: metadataUri,
+        metadata: {
+            name,
+            symbol,
+            description,
+            image: imgUri,
+            website: website || "https://pumpportal.fun",
+            createdOn: "https://bonk.fun"
+        }
+    };
+}
+
 // NEW: Step 1 - Store upload data with Vencord frame wrapping fix
 export async function storeUploadData(...args: any[]): Promise<boolean> {
     try {
@@ -464,7 +521,7 @@ export async function processUpload(): Promise<{ metadataUri: string; debugMetad
         }
 
         const { imageData, metadata } = stored;
-        const { name, symbol, filename, description, website, mint } = metadata;
+        const { name, symbol, filename, description, website, mint, pool = "pump" } = metadata;
 
         if (!imageData || typeof imageData !== "string") {
             throw new Error(`Invalid imageData: expected string, got ${typeof imageData} (${imageData})`);
@@ -544,7 +601,9 @@ export async function processUpload(): Promise<{ metadataUri: string; debugMetad
         const body = Buffer.concat(formParts);
         const formContentType = `multipart/form-data; boundary=${boundary}`;
 
-        const result = await uploadToPumpFun(body, formContentType);
+        const result = pool === "bonk" 
+            ? await uploadToBonkFun(body, formContentType, { name, symbol, description, website })
+            : await uploadToPumpFun(body, formContentType);
 
         const processingTime = Date.now() - uploadStartTime;
 

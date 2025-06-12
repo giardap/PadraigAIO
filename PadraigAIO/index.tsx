@@ -1,10 +1,12 @@
 import definePlugin from "@utils/types";
 import { openModal } from "@utils/modal";
 import { React } from "@webpack/common";
+import { get as DataStoreGet, set as DataStoreSet } from "@api/DataStore";
 import { WalletModal } from "./WalletModal";
 import { CoinModal } from "./CoinModal";
 import { BuySellModal } from "./BuySellModal";
 import { StandaloneTradingSettingsModal } from "./StandaloneTradingSettingsModal";
+import { WelcomePopup } from "./WelcomePopup";
 import { storageManager } from "./storageHelper";
 import { addressDetector, type AddressScore } from "./addressUtils";
 import { marketDataCollector, type EnhancedTokenMetadata } from "./marketDataUtils";
@@ -50,6 +52,9 @@ export default definePlugin({
 
     start() {
         console.log("[PumpPortalPlugin] Starting enhanced unified plugin...");
+        
+        // Show welcome popup on first launch
+        this.showWelcomeIfFirstTime();
         
         // Initialize storage system
         this.initializeStorage();
@@ -322,6 +327,28 @@ export default definePlugin({
 
         messageObserver.observe(document.body, { childList: true, subtree: true });
         this._cleanup = () => messageObserver.disconnect();
+    },
+
+    // Show welcome popup every time Discord starts
+    async showWelcomeIfFirstTime() {
+        try {
+            console.log("[PumpPortalPlugin] Showing welcome popup on startup");
+            
+            // Wait a moment for Discord to fully load
+            setTimeout(() => {
+                openModal((props: any) => React.createElement(WelcomePopup, {
+                    ...props,
+                    onClose: () => {
+                        console.log("[PumpPortalPlugin] Welcome popup closed");
+                        props.onClose?.();
+                    }
+                }));
+            }, 2000); // 2 second delay to let Discord load
+            
+            console.log("[PumpPortalPlugin] Welcome popup scheduled");
+        } catch (error) {
+            console.error("[PumpPortalPlugin] Error showing welcome popup:", error);
+        }
     },
 
     // Initialize enhanced storage system

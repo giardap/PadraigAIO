@@ -92,7 +92,6 @@ export function CoinModal(props: any) {
     const [response, setResponse] = React.useState<string | null>(null);
 
     // Success celebration states
-    const [showConfetti, setShowConfetti] = React.useState(false);
     const [transactionUrl, setTransactionUrl] = React.useState<string>("");
     const [createdTokenInfo, setCreatedTokenInfo] = React.useState<{
         name: string;
@@ -102,11 +101,13 @@ export function CoinModal(props: any) {
     } | null>(null);
 
     // Enhanced storage state
-    const [storageInfo, setStorageInfo] = React.useState<any>(null);
     const [usingCachedImage, setUsingCachedImage] = React.useState(false);
     const [pool, setPool] = React.useState("pump");
-    const [uploadHistory, setUploadHistory] = React.useState<any[]>([]);
+    const [website, setWebsite] = React.useState(props.extractedLink || "");
     const [imageOptimized, setImageOptimized] = React.useState(false);
+    const [showConfetti, setShowConfetti] = React.useState(false);
+    const [storageInfo, setStorageInfo] = React.useState<any>(null);
+    const [uploadHistory, setUploadHistory] = React.useState<any[]>([]);
 
     // Use dev buy amount from global settings only
     const globalSettings = getGlobalTradingSettings();
@@ -559,12 +560,6 @@ export function CoinModal(props: any) {
     };
 
 
-    const formatAddress = (address: string) => {
-        if (!address) return "";
-        if (address.length <= 12) return address;
-        return `${address.slice(0, 6)}...${address.slice(-6)}`;
-    };
-
     // Enhanced URL validation
     const validateUrl = (url: string): string => {
         console.log("[CoinModal] Validating URL:", url);
@@ -623,8 +618,8 @@ export function CoinModal(props: any) {
         const descStr = description || "Generated via Pump.fun plugin";
 
         // Enhanced URL validation
-        const rawLinkStr = props.extractedLink || "https://pumpportal.fun";
-        const linkStr = validateUrl(rawLinkStr);
+        const rawLinkStr = website || "";
+        const linkStr = website ? validateUrl(rawLinkStr) : "";
 
         console.log("[CoinModal] URL validation:", {
             raw: rawLinkStr,
@@ -684,7 +679,7 @@ export function CoinModal(props: any) {
                         throw new Error("Image not cached, using direct download");
                     }
 
-                } catch (cacheError) {
+                } catch (cacheError: any) {
                     console.log("[CoinModal] Cache attempt failed, using direct download:", cacheError.message);
 
                     // Fallback to direct native download
@@ -735,7 +730,7 @@ export function CoinModal(props: any) {
                         throw new Error("Processed image still too large for bridge transfer.");
                     }
 
-                } catch (processingError) {
+                } catch (processingError: any) {
                     throw new Error(`Failed to process uploaded file: ${processingError.message}`);
                 }
 
@@ -1050,7 +1045,7 @@ Transaction:`);
         padding: "8px 10px",
         color: BRAND_COLORS.primary,
         fontSize: "13px",
-        width: "300px",
+        width: "320px",
         maxWidth: "100%"
     };
 
@@ -1117,35 +1112,6 @@ Transaction:`);
             <ModalContent style={{ padding: "16px 20px" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "flex-start" }}>
 
-                    {/* Compact Wallet Balance Display */}
-                    {selectedWalletObj && (
-                        <div style={{ width: "100%", marginBottom: "4px" }}>
-                            <div style={{
-                                backgroundColor: BRAND_COLORS.primaryDark,
-                                border: `1px solid ${BRAND_COLORS.accent3}`,
-                                borderRadius: "4px",
-                                padding: "6px 8px",
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center"
-                            }}>
-                                <Text style={{
-                                    fontSize: "11px",
-                                    fontWeight: "600",
-                                    color: BRAND_COLORS.text,
-                                    fontFamily: "monospace"
-                                }}>
-                                    💼 {loadingBalances[selectedWalletObj.id] ? "Loading..." : `${walletBalances[selectedWalletObj.id]?.toFixed(3) ?? "0.000"} SOL`}
-                                </Text>
-                                <Text style={{
-                                    fontSize: "8px",
-                                    color: BRAND_COLORS.textMuted
-                                }}>
-                                    DEFAULT
-                                </Text>
-                            </div>
-                        </div>
-                    )}
 
                     {wallets.length === 0 && (
                         <div style={{
@@ -1296,7 +1262,7 @@ Transaction:`);
                     </div>
 
                     {/* Form Fields */}
-                    <div>
+                    <div style={{ width: "100%" }}>
                         <label style={labelStyle}>Coin Name</label>
                         <input
                             type="text"
@@ -1307,7 +1273,7 @@ Transaction:`);
                         />
                     </div>
 
-                    <div>
+                    <div style={{ width: "100%" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                             <label style={labelStyle}>Symbol</label>
                             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -1366,7 +1332,7 @@ Transaction:`);
                         )}
                     </div>
 
-                    <div>
+                    <div style={{ width: "100%" }}>
                         <label style={labelStyle}>Description</label>
                         <textarea
                             value={description}
@@ -1375,24 +1341,20 @@ Transaction:`);
                             style={{
                                 ...inputStyle,
                                 height: "60px",
-                                width: "350px",
                                 resize: "vertical",
                                 fontFamily: "inherit"
                             }}
                         />
                     </div>
 
-                    <div>
-                        <label style={labelStyle}>Website</label>
+                    <div style={{ width: "100%" }}>
+                        <label style={labelStyle}>Twitter/Social</label>
                         <input
                             type="text"
-                            value={props.extractedLink || ""}
-                            style={{
-                                ...inputStyle,
-                                opacity: 0.6,
-                                cursor: "pointer",
-                                backgroundColor: "#2D2A27"
-                            }}
+                            value={website}
+                            onChange={(e) => setWebsite(e.target.value)}
+                            placeholder="https://x.com/your_project"
+                            style={inputStyle}
                         />
                         <Text style={{
                             color: BRAND_COLORS.textMuted,
@@ -1400,9 +1362,7 @@ Transaction:`);
                             marginTop: "4px",
                             display: "block"
                         }}>
-                            Auto-detected from message content
-                            {props.extractedLink && validateUrl(props.extractedLink) !== "" ?
-                                " ✅ Valid" : " ⚠️ Using fallback"}
+                            {props.extractedLink ? "Auto-detected, you can edit this" : "Enter Twitter/X or social media link"}
                         </Text>
                     </div>
 
@@ -1431,42 +1391,16 @@ Transaction:`);
                         </Text>
                     </div>
 
-                    {/* Dev Buy Amount - Compact Display */}
-                    <div style={{ width: "100%", marginTop: "4px" }}>
-                        <div style={{
-                            backgroundColor: BRAND_COLORS.primaryDark,
-                            border: `1px solid ${BRAND_COLORS.accent3}`,
-                            borderRadius: "4px",
-                            padding: "8px",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center"
-                        }}>
-                            <div>
-                                <Text style={{ fontSize: "12px", fontWeight: "600", color: BRAND_COLORS.accent2 }}>
-                                    💰 Dev Buy: {buyAmount} SOL
-                                </Text>
-                                {selectedWalletObj?.id && walletBalances[selectedWalletObj.id] !== undefined && (
-                                    <Text style={{
-                                        fontSize: "9px",
-                                        color: parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] ? BRAND_COLORS.danger : BRAND_COLORS.textMuted,
-                                        marginTop: "2px"
-                                    }}>
-                                        {parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] ? "⚠️ " : "💼 "}
-                                        Balance: {walletBalances[selectedWalletObj.id].toFixed(3)} SOL
-                                        {parseFloat(buyAmount) > walletBalances[selectedWalletObj.id] && " (Low!)"}
-                                    </Text>
-                                )}
-                            </div>
-                            <Text style={{
-                                fontSize: "8px",
-                                color: BRAND_COLORS.textMuted,
-                                textAlign: "right"
-                            }}>
-                                FROM<br />SETTINGS
-                            </Text>
-                        </div>
-                    </div>
+                    {/* Dev Buy Amount - Small Muted Text */}
+                    <Text style={{
+                        fontSize: "11px",
+                        color: BRAND_COLORS.textMuted,
+                        textAlign: "center",
+                        marginTop: "8px",
+                        display: "block"
+                    }}>
+                        💰 Dev Buy: {buyAmount} SOL
+                    </Text>
 
                 </div>
 
@@ -1636,7 +1570,7 @@ Transaction:`);
                 )}
             </ModalContent>
 
-            <ModalFooter style={{ padding: "20px 24px", paddingTop: "0" }}>
+            <ModalFooter>
                 <button
                     onClick={submit}
                     disabled={loading || !coinName || !symbol || (!image && !selectedImageUrl) || !selectedWalletObj?.apiKey}

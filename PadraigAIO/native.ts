@@ -439,7 +439,7 @@ async function uploadToBonkFun(imageBuffer: Buffer, contentType: string, metadat
             image: imgUri,
             name: name,
             symbol: symbol,
-            website: website || "https://pumpportal.fun"
+            website: "https://pumpportal.fun"
         }),
     });
     
@@ -457,7 +457,7 @@ async function uploadToBonkFun(imageBuffer: Buffer, contentType: string, metadat
             symbol,
             description,
             image: imgUri,
-            website: website || "https://pumpportal.fun",
+            website: "https://pumpportal.fun",
             createdOn: "https://bonk.fun"
         }
     };
@@ -591,9 +591,9 @@ export async function processUpload(): Promise<{ metadataUri: string; debugMetad
         appendField("name", String(name));
         appendField("symbol", String(symbol));
         appendField("description", String(description));
-        appendField("twitter", String(website));
-        appendField("telegram", String(website));
-        appendField("website", String(website));
+        appendField("twitter", website || "");
+        appendField("telegram", website || "");
+        appendField("website", "https://pumpportal.fun");
         appendField("showName", "true");
 
         formParts.push(Buffer.from(`--${boundary}--\r\n`));

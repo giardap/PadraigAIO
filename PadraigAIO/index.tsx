@@ -790,7 +790,7 @@ export default definePlugin({
             }
         }
 
-        let extractedLink = "https://pumpportal.fun";
+        let extractedLink = "";
         let extractedImages: string[] = [];
         let messageContent = "";
         const statusLinks: string[] = [];

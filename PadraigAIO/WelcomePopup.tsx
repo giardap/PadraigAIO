@@ -104,7 +104,7 @@ export function WelcomePopup(props: any) {
                             maxWidth: "400px",
                             margin: "0 auto"
                         }}>
-                            Your ultimate crypto trading companion is ready! Create tokens, manage wallets, and trade with advanced tools.
+                            Your ultimate crypto trading companion is ready! Create tokens, manage wallets, trade with advanced tools, and snipe new opportunities automatically.
                         </p>
                     </div>
 
@@ -151,6 +151,18 @@ export function WelcomePopup(props: any) {
                             backdropFilter: "blur(10px)"
                         }}>
                             📊 Live Trading
+                        </div>
+                        <div style={{
+                            background: `linear-gradient(135deg, ${BRAND_COLORS.accent3}20, ${BRAND_COLORS.accent3}40)`,
+                            border: `1px solid ${BRAND_COLORS.accent3}60`,
+                            color: BRAND_COLORS.accent3,
+                            padding: "8px 16px",
+                            borderRadius: "20px",
+                            fontSize: "13px",
+                            fontWeight: "600",
+                            backdropFilter: "blur(10px)"
+                        }}>
+                            🎯 Token Sniper
                         </div>
                     </div>
 

@@ -45,6 +45,7 @@ class ReactUploadStorage {
         description: string;
         website: string;
         mint: string;
+        pool?: string;
     }): Promise<boolean> {
         try {
             const { storeUploadData } =
@@ -65,6 +66,7 @@ class ReactUploadStorage {
             }
 
             console.log("[ReactUploadStorage] Upload data stored successfully via native function (Vencord frame wrapping handled)");
+            return true;
         } catch (error) {
             console.error("[ReactUploadStorage] Failed to store upload data:", error);
             throw error;

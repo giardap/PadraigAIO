@@ -562,7 +562,7 @@ export class EnhancedMarketDataCollector {
         if (data.priceChange1h && data.priceChange24h) {
             const priceChanges = [data.priceChange1h, data.priceChange6h, data.priceChange24h].filter(Boolean);
             if (priceChanges.length > 1) {
-                const variance = priceChanges.reduce((sum, change) => sum + Math.pow(change!, 2), 0) / priceChanges.length;
+                const variance = priceChanges.reduce((sum: number, change) => sum + Math.pow(change || 0, 2), 0) / priceChanges.length;
                 data.volatility = Math.sqrt(variance);
             }
         }

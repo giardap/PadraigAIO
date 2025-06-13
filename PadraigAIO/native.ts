@@ -360,7 +360,7 @@ function uploadToPumpFun(body: Buffer, contentType: string): Promise<{ uri: stri
                     let parsed;
                     try {
                         parsed = JSON.parse(responseText);
-                    } catch (parseError) {
+                    } catch (parseError: any) {
                         reject(new Error(`Failed to parse JSON response: ${parseError.message}. Response: ${responseText.substring(0, 100)}`));
                         return;
                     }
@@ -371,7 +371,7 @@ function uploadToPumpFun(body: Buffer, contentType: string): Promise<{ uri: stri
                         reject(new Error(`Invalid response structure: ${JSON.stringify(parsed)}`));
                     }
 
-                } catch (parseError) {
+                } catch (parseError: any) {
                     reject(new Error(`Parse error: ${parseError.message}`));
                 }
             });
@@ -504,7 +504,7 @@ export async function storeUploadData(...args: any[]): Promise<boolean> {
         }
 
         return await nativeFileStorage.storeUploadData(imageData, metadata);
-    } catch (error) {
+    } catch (error: any) {
         throw new Error(`StoreUploadData failed: ${error.message}`);
     }
 }
@@ -521,7 +521,8 @@ export async function processUpload(): Promise<{ metadataUri: string; debugMetad
         }
 
         const { imageData, metadata } = stored;
-        const { name, symbol, filename, description, website, mint, pool = "pump" } = metadata;
+        const { name, symbol, filename, description, website, mint } = metadata;
+        const pool = (metadata as any).pool || "pump";
 
         if (!imageData || typeof imageData !== "string") {
             throw new Error(`Invalid imageData: expected string, got ${typeof imageData} (${imageData})`);
@@ -552,7 +553,7 @@ export async function processUpload(): Promise<{ metadataUri: string; debugMetad
 
             try {
                 imageBuffer = Buffer.from(base64Data, "base64");
-            } catch (base64Error) {
+            } catch (base64Error: any) {
                 throw new Error(`Failed to decode base64 data: ${base64Error.message}`);
             }
 

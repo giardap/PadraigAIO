@@ -17,6 +17,8 @@ import { storageManager } from "./storageHelper";
 import { ToastContainer } from "./ToastManager";
 import { WalletModal } from "./WalletModal";
 import { WelcomePopup } from "./WelcomePopup";
+import { SniperStatusIndicator } from "./TokenSniper";
+import { SniperModal } from "./SniperModal";
 
 // Padraig Branding Variables
 // Padraig Branding Variables
@@ -112,34 +114,9 @@ export default definePlugin({
                     brandingContainer.appendChild(logo);
                 }
 
-                // Add enhanced brand text with storage indicator
-                const brandText = document.createElement("span");
-                brandText.textContent = "PadraigAIO";
-                brandText.style.cssText = `
-                    color: ${BRAND_COLORS.text};
-                    font-size: 12px;
-                    font-weight: 600;
-                    letter-spacing: 0.5px;
-                `;
-                brandingContainer.appendChild(brandText);
 
                 // Add storage status indicator
-                const storageIndicator = document.createElement("span");
-                storageIndicator.className = "storage-indicator";
-                storageIndicator.textContent = "💾";
-                storageIndicator.style.cssText = `
-                    color: ${BRAND_COLORS.success};
-                    font-size: 10px;
-                    cursor: pointer;
-                    opacity: 0.7;
-                    transition: opacity 0.2s ease;
-                `;
-                storageIndicator.title = "Enhanced storage active - click for info";
-                storageIndicator.onclick = async () => {
-                    const info = await storageManager.getStorageInfo();
-                    alert(`Enhanced Storage Status:\n\nUsage: ${info?.usage} (${info?.usagePercent})\nCached Images: ${info?.breakdown?.cachedImages || 0}\nWallets: ${info?.breakdown?.wallets || 0}\nUpload History: ${info?.breakdown?.uploadHistory || 0}\nCreated Coins: ${info?.breakdown?.createdCoins || 0}`);
-                };
-                brandingContainer.appendChild(storageIndicator);
+
                 // Create button container
                 const buttonContainer = document.createElement("div");
                 buttonContainer.className = "pump-persistent-button pump-button-container";
@@ -294,10 +271,47 @@ export default definePlugin({
                     openModal((props: any) => React.createElement(StandaloneTradingSettingsModal, props));
                 };
 
+                // Sniper Button
+                const sniperBtn = document.createElement("button");
+                sniperBtn.className = "pump-persistent-button";
+                sniperBtn.textContent = "🎯Sniper";
+                sniperBtn.style.cssText = `
+                    background: linear-gradient(135deg, ${BRAND_COLORS.warning}, ${BRAND_COLORS.warning}dd);
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 6px 10px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    transition: all 0.2s ease;
+                    margin-right: 8px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                `;
+
+                sniperBtn.addEventListener("mouseenter", () => {
+                    sniperBtn.style.transform = "translateY(-1px)";
+                    sniperBtn.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+                    sniperBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.warning}ee, ${BRAND_COLORS.warning}cc)`;
+                });
+
+                sniperBtn.addEventListener("mouseleave", () => {
+                    sniperBtn.style.transform = "translateY(0)";
+                    sniperBtn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+                    sniperBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.warning}, ${BRAND_COLORS.warning}dd)`;
+                });
+
+                sniperBtn.onclick = () => {
+                    openModal((props: any) => React.createElement(SniperModal, props));
+                };
+
                 buttonContainer.appendChild(walletBtn);
                 buttonContainer.appendChild(coinBtn);
                 buttonContainer.appendChild(tradeBtn);
                 buttonContainer.appendChild(settingsBtn);
+                buttonContainer.appendChild(sniperBtn);
                 brandingContainer.appendChild(buttonContainer);
                 container.appendChild(brandingContainer);
 
@@ -316,6 +330,9 @@ export default definePlugin({
         // Mount LivePriceSidebar
         this.mountLivePriceSidebar();
 
+        // Mount Sniper Status
+        this.mountSniperStatus();
+
         // Enhanced message observer with caching and CA detection
         const messageObserver = new MutationObserver(mutations => {
             // Re-add persistent buttons if they disappear
@@ -330,6 +347,9 @@ export default definePlugin({
             if (!document.getElementById("padraig-price-sidebar")) {
                 this.mountLivePriceSidebar();
             }
+            if (!document.getElementById("padraig-sniper-status")) {
+                this.mountSniperStatus();
+            }
 
             // Enhanced inline button processing with CA detection
             for (const mutation of mutations) {
@@ -338,7 +358,7 @@ export default definePlugin({
 
                     const contentDivs = node.querySelectorAll("div[class*='messageContent_'], div[class*='markup_']");
                     contentDivs.forEach(content => {
-                        this.processMessageContent(content);
+                        this.processMessageContent(content as HTMLElement);
                     });
                 }
             }
@@ -584,6 +604,49 @@ export default definePlugin({
         }
     },
 
+    // Mount Sniper Status Indicator
+    mountSniperStatus() {
+        try {
+            console.log("[PumpPortalPlugin] Mounting Sniper Status...");
+
+            // Remove existing sniper status if it exists
+            const existingStatus = document.getElementById("padraig-sniper-status");
+            if (existingStatus) {
+                existingStatus.remove();
+            }
+
+            // Create container for sniper status
+            const statusContainerDiv = document.createElement("div");
+            statusContainerDiv.id = "padraig-sniper-status";
+            statusContainerDiv.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                z-index: 9998;
+                transition: all 0.3s ease;
+            `;
+
+            // Mount SniperStatusIndicator React component
+            const SniperStatusElement = React.createElement(SniperStatusIndicator, {});
+
+            // Add to DOM
+            document.body.appendChild(statusContainerDiv);
+
+            // Use createRoot (React 18+)
+            try {
+                const root = (ReactDOM as any).createRoot(statusContainerDiv);
+                root.render(SniperStatusElement);
+                this._sniperStatusRoot = root;
+            } catch (error) {
+                console.error("[PumpPortalPlugin] Error creating React root for SniperStatus:", error);
+            }
+
+            console.log("[PumpPortalPlugin] SniperStatus mounted successfully");
+        } catch (error) {
+            console.error("[PumpPortalPlugin] Error mounting SniperStatus:", error);
+        }
+    },
+
     // Enhanced function to detect valid Solana contract addresses with improved accuracy
     detectSolanaContractAddresses(text: string, maxResults: number = 10): string[] {
         const addressScores = addressDetector.detectSolanaContractAddresses(text, maxResults);
@@ -800,9 +863,9 @@ export default definePlugin({
         if (targetMessage) {
             const messageText = targetMessage.textContent || "";
             const messageId = targetMessage.getAttribute("id") ||
-                             targetMessage.getAttribute("data-list-item-id") ||
-                             targetMessage.querySelector("[data-list-item-id]")?.getAttribute("data-list-item-id") ||
-                             Date.now().toString();
+                targetMessage.getAttribute("data-list-item-id") ||
+                targetMessage.querySelector("[data-list-item-id]")?.getAttribute("data-list-item-id") ||
+                Date.now().toString();
 
             // Extract text content
             const embedDescriptions = targetMessage.querySelectorAll('div[class*="embedDescription"]');
@@ -1037,12 +1100,12 @@ export default definePlugin({
 
         // Enhanced Twitter content detection - be more permissive for now
         const hasTwitterContent = this.isActualTwitterContent(messageContainer, messageText) ||
-                                 messageText.toLowerCase().includes("tweet") ||
-                                 messageText.includes("@") ||
-                                 messageText.includes("twitter.com") ||
-                                 messageText.includes("x.com") ||
-                                 messageContainer.querySelector('div[class*="embedTitle"]') ||
-                                 messageContainer.querySelector('div[class*="embedDescription"]');
+            messageText.toLowerCase().includes("tweet") ||
+            messageText.includes("@") ||
+            messageText.includes("twitter.com") ||
+            messageText.includes("x.com") ||
+            messageContainer.querySelector('div[class*="embedTitle"]') ||
+            messageContainer.querySelector('div[class*="embedDescription"]');
 
         // Check for Solana contract addresses using cleaned text
         const detectedAddresses = this.detectSolanaContractAddresses(cleanMessageText);
@@ -1194,6 +1257,21 @@ export default definePlugin({
             }
             sidebarContainer.remove();
         }
+
+        // Clean up Sniper Status
+        const sniperContainer = document.getElementById("padraig-sniper-status");
+        if (sniperContainer) {
+            if (this._sniperStatusRoot) {
+                this._sniperStatusRoot.unmount();
+                this._sniperStatusRoot = null;
+            }
+            sniperContainer.remove();
+        }
+
+        // Disconnect sniper WebSocket
+        import("./TokenSniper").then(({ tokenSniper }) => {
+            tokenSniper.disconnect();
+        });
 
         // Disconnect observers
         this._cleanup?.();

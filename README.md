@@ -6,7 +6,7 @@
 
 **Enhanced Solana token creation and trading directly from Discord**
 
-PadraigAIO is a comprehensive Discord/Vencord plugin that enables seamless creation and trading of Solana tokens through pump.fun, with advanced features like smart contract detection, real-time market data, and automated IPFS uploads.
+PadraigAIO is a comprehensive Discord/Vencord plugin that enables seamless creation and trading of Solana tokens through pump.fun, with advanced features like smart contract detection, real-time market data, automated IPFS uploads, and professional token sniping capabilities.
 
 ![Plugin Interface](https://img.shields.io/badge/Platform-Discord%20%2F%20Vencord-5865F2)
 ![Solana](https://img.shields.io/badge/Blockchain-Solana-9945FF)
@@ -41,6 +41,16 @@ PadraigAIO is a comprehensive Discord/Vencord plugin that enables seamless creat
 - **Multi-Exchange Support**: Auto-routing through best available pools
 - **Risk Management**: Built-in slippage and fee controls
 - **Transaction Tracking**: Direct links to blockchain explorers
+
+### 🎯 Professional Token Sniping
+- **Real-Time Monitoring**: Continuous scanning for new token deployments on pump.fun
+- **Smart Contract Detection**: Advanced filtering for legitimate projects and avoiding rugs
+- **Automated Trading**: Lightning-fast execution with customizable buy parameters
+- **Risk Assessment**: Built-in filters for liquidity, holder count, market cap, and dev behavior
+- **Sniper Status Display**: Live feed of detected tokens and real-time trading activity
+- **Performance Tracking**: Monitor sniping success rates, profitability, and win/loss ratios
+- **Customizable Criteria**: Set minimum liquidity, maximum market cap, and other safety parameters
+- **Speed Optimization**: Sub-second execution when tokens meet your criteria
 
 ### ⚙️ Professional Configuration
 - **Global Trading Settings**: Centralized configuration for all operations
@@ -228,6 +238,13 @@ Solutions:
 - **Performance Metrics**: Track portfolio value and changes
 - **Transaction History**: Complete audit trail with blockchain links
 
+### Token Sniping Intelligence
+- **New Token Detection**: Monitors pump.fun for fresh deployments in real-time
+- **Risk Evaluation**: Analyzes dev behavior, liquidity patterns, and holder distribution
+- **Speed Execution**: Automated buying within seconds of token launch
+- **Safety Filters**: Avoids obvious scams and rug pulls through pattern analysis
+- **Performance Analytics**: Tracks win rate, average returns, and execution speed
+
 ---
 
 ## 🎮 User Interface
@@ -239,6 +256,12 @@ The plugin adds a persistent toolbar to Discord with four main components:
 - **🚀 Create**: Launch token creation interface
 - **📊 Trade**: Open trading interface with market data
 - **⚙️ Settings**: Configure global trading parameters
+
+### Token Sniper Interface
+- **Live Status Feed**: Real-time display of detected tokens and their analysis results
+- **Sniper Controls**: Enable/disable automated trading with one click
+- **Filter Configuration**: Set custom criteria for token evaluation
+- **Performance Dashboard**: Track success metrics and profitability
 
 ### Contextual Integration
 - **Inline Buttons**: Smart buttons appear under relevant Discord messages
@@ -269,6 +292,13 @@ The plugin adds a persistent toolbar to Discord with four main components:
 - **Pool Selection**: Auto-routing or manual exchange selection
 - **Transaction Options**: Skip preflight checks for faster execution
 - **MEV Protection**: Jito-only routing for large trades
+
+### Automated Sniping
+- **Real-Time Scanning**: Continuous monitoring of pump.fun for new token launches
+- **Instant Analysis**: Automated evaluation of token legitimacy and potential
+- **Lightning Execution**: Sub-second buying when tokens meet criteria
+- **Risk Management**: Built-in safety checks and position sizing
+- **Performance Tracking**: Monitor success rates and profitability metrics
 
 ---
 
@@ -310,6 +340,14 @@ Access via Discord Settings → Vencord → Plugins → PadraigAIO:
 - **Image Cache**: Configure caching behavior
 - **Network Settings**: RPC endpoints and timeouts
 
+### Sniper Configuration
+
+- **Enable/Disable**: Toggle automated sniping on/off
+- **Buy Amount**: Set default SOL amount for automated purchases
+- **Safety Filters**: Configure minimum liquidity, maximum market cap
+- **Speed Settings**: Adjust execution timing and priority fees
+- **Risk Tolerance**: Set conservative, balanced, or aggressive modes
+
 ---
 
 ## 🔒 Security Features
@@ -343,6 +381,12 @@ Access via Discord Settings → Vencord → Plugins → PadraigAIO:
 - **Slippage Tolerance**: Personal risk comfort levels
 - **Auto-Refresh Settings**: Balance update frequency preferences
 
+### Sniper Customization
+- **Token Criteria**: Set minimum/maximum values for liquidity, market cap, holders
+- **Execution Speed**: Configure priority fees and timing preferences
+- **Risk Filters**: Enable/disable various safety checks and pattern analysis
+- **Position Sizing**: Set default buy amounts and maximum exposure limits
+
 ### Interface Customization
 - **Theme Integration**: Follows Discord's theme automatically
 - **Notification Preferences**: Control trade completion alerts
@@ -372,6 +416,12 @@ Access via Discord Settings → Vencord → Plugins → PadraigAIO:
 - **Transaction Status**: Live updates on pending operations
 - **Portfolio Sync**: Automatic refresh after successful trades
 
+### Sniper Performance
+- **Ultra-Low Latency**: Optimized WebSocket connections for fastest detection
+- **Parallel Processing**: Simultaneous analysis of multiple new tokens
+- **Smart Caching**: Pre-loaded data for instant execution decisions
+- **Efficient Filtering**: Multi-stage analysis to avoid unnecessary processing
+
 ### Reliability Features
 - **Error Recovery**: Automatic retry for failed operations
 - **Fallback Systems**: Multiple data sources for redundancy
@@ -393,6 +443,12 @@ Access via Discord Settings → Vencord → Plugins → PadraigAIO:
 - **Portfolio Management**: Track holdings across multiple wallets
 - **Risk Management**: Configurable safety parameters
 - **Performance Tracking**: Complete transaction and portfolio history
+
+### Professional Snipers
+- **Automated Detection**: 24/7 monitoring for new token opportunities
+- **Lightning Execution**: Sub-second trading capabilities when opportunities arise
+- **Risk Assessment**: Advanced filtering to avoid scams and low-quality projects
+- **Performance Analytics**: Detailed tracking of success rates and profitability
 
 ### DeFi Enthusiasts
 - **Multi-Exchange Access**: Route through best available liquidity
@@ -444,6 +500,17 @@ Solutions:
 4. Check for storage quota limits
 ```
 
+#### Sniper Not Working
+```
+Problem: Token sniper not detecting or trading
+Solutions:
+1. Verify sniper is enabled in settings
+2. Check wallet has sufficient SOL balance
+3. Verify network connection and RPC endpoints
+4. Review sniper criteria - may be too restrictive
+5. Check console for error messages in debug mode
+```
+
 #### Discord Integration Problems
 ```
 Problem: Commands not working
@@ -482,6 +549,7 @@ Enable debug mode for detailed logging:
 - **Cache Hit Rate**: 90%+ for repeated operations
 - **Storage Efficiency**: <50MB typical usage
 - **Update Frequency**: 5-30 second intervals for live data
+- **Sniper Speed**: <1s from detection to execution
 
 ---
 
@@ -491,6 +559,7 @@ Enable debug mode for detailed logging:
 - **Context Awareness**: Understands Discord message content and context
 - **Smart Detection**: Recognizes contract addresses and social content automatically
 - **Adaptive Interface**: UI elements appear contextually based on content
+- **Automated Analysis**: Real-time evaluation of token legitimacy and potential
 
 ### Integration
 - **Native Discord Feel**: Seamlessly integrated into Discord's interface
@@ -506,6 +575,7 @@ Enable debug mode for detailed logging:
 - **First-of-Kind**: Unique Discord-native token creation and trading
 - **Advanced Caching**: Sophisticated optimization for repeated operations
 - **Professional UX**: Polished interface with attention to detail
+- **Cutting-Edge Sniping**: Revolutionary automated token detection and trading
 
 ---
 

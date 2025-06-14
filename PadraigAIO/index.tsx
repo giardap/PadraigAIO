@@ -356,8 +356,8 @@ export default definePlugin({
         // Mount ToastContainer
         this.mountToastContainer();
 
-        // Mount LivePriceSidebar
-        this.mountLivePriceSidebar();
+        // Mount LivePriceSidebar - DISABLED
+        // this.mountLivePriceSidebar();
 
         // Mount Sniper Status
         this.mountSniperStatus();
@@ -373,9 +373,10 @@ export default definePlugin({
             if (!document.getElementById("padraig-toast-container")) {
                 this.mountToastContainer();
             }
-            if (!document.getElementById("padraig-price-sidebar")) {
-                this.mountLivePriceSidebar();
-            }
+            // LivePriceSidebar mounting disabled
+            // if (!document.getElementById("padraig-price-sidebar")) {
+            //     this.mountLivePriceSidebar();
+            // }
             if (!document.getElementById("padraig-sniper-status")) {
                 this.mountSniperStatus();
             }

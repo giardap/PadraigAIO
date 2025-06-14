@@ -33,7 +33,6 @@ export function WelcomePopup({ onClose }: WelcomePopupProps) {
     return (
         <ModalRoot
             transitionState={1}
-            disableTrack={true}
         >
             <ModalContent style={{
                 padding: 0,

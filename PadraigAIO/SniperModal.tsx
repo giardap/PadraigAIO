@@ -676,10 +676,10 @@ export const SniperModal: React.FC<SniperModalProps> = ({ onClose, ...props }) =
                                         <label style={labelStyle}>Min Initial Liquidity (SOL)</label>
                                         <input
                                             type="number"
-                                            step="0.1"
+                                            step="0.01"
                                             value={config.criteria.minLiquidity || ""}
                                             onChange={(e) => updateCriteria({ minLiquidity: parseFloat(e.target.value) || 0 })}
-                                            placeholder="0.1"
+                                            placeholder="0.01"
                                             style={inputStyle}
                                             className="sniper-input"
                                         />
@@ -720,7 +720,7 @@ export const SniperModal: React.FC<SniperModalProps> = ({ onClose, ...props }) =
                                     💰 Trading Configuration
                                 </Text>
 
-                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "16px" }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px", marginBottom: "16px" }}>
                                     <div>
                                         <label style={labelStyle}>Buy Amount (SOL per wallet)</label>
                                         <input
@@ -728,7 +728,7 @@ export const SniperModal: React.FC<SniperModalProps> = ({ onClose, ...props }) =
                                             step="0.01"
                                             value={config.trading.buyAmount}
                                             onChange={(e) => updateTrading({ buyAmount: parseFloat(e.target.value) || 0.1 })}
-                                            style={{ ...inputStyle, width: "100%" }}
+                                            style={inputStyle}
                                             className="sniper-input"
                                         />
                                     </div>
@@ -739,7 +739,7 @@ export const SniperModal: React.FC<SniperModalProps> = ({ onClose, ...props }) =
                                             type="number"
                                             value={config.trading.slippage}
                                             onChange={(e) => updateTrading({ slippage: parseInt(e.target.value) || 10 })}
-                                            style={{ ...inputStyle, width: "100%" }}
+                                            style={inputStyle}
                                             className="sniper-input"
                                         />
                                     </div>
@@ -750,7 +750,7 @@ export const SniperModal: React.FC<SniperModalProps> = ({ onClose, ...props }) =
                                             type="number"
                                             value={config.trading.staggerDelay || 100}
                                             onChange={(e) => updateTrading({ staggerDelay: parseInt(e.target.value) || 100 })}
-                                            style={{ ...inputStyle, width: "100%" }}
+                                            style={inputStyle}
                                             className="sniper-input"
                                         />
                                     </div>

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { ModalContent, ModalFooter,ModalHeader, ModalRoot } from "@utils/modal";
+import { ModalContent, ModalFooter,ModalHeader, ModalRoot, openModal } from "@utils/modal";
 import { Button, React,Text } from "@webpack/common";
 
 // Padraig Branding Variables
@@ -63,6 +63,7 @@ try {
     console.warn("[TradingSettings] Failed to load saved settings:", error);
 }
 
+
 export function StandaloneTradingSettingsModal(props: any) {
     const [slippage, setSlippage] = React.useState(globalTradingSettings.slippage);
     const [priorityFee, setPriorityFee] = React.useState(globalTradingSettings.priorityFee);
@@ -80,6 +81,7 @@ export function StandaloneTradingSettingsModal(props: any) {
     const [editingSellPercentages, setEditingSellPercentages] = React.useState(false);
     const [newBuyAmount, setNewBuyAmount] = React.useState("");
     const [newSellPercentage, setNewSellPercentage] = React.useState("");
+
 
     React.useEffect(() => {
         const current = getGlobalTradingSettings();
@@ -855,7 +857,7 @@ export function StandaloneTradingSettingsModal(props: any) {
 
                 {/* Credit */}
                 <div style={{
-                    marginTop: "20px",
+                    marginTop: "16px",
                     padding: "12px",
                     backgroundColor: "#40444b",
                     borderRadius: "8px",

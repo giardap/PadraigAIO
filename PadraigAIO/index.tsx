@@ -51,6 +51,32 @@ try {
     console.warn("[PumpPortalPlugin] Failed to load debug setting:", error);
 }
 
+// Theme configuration - stored in localStorage
+const THEME_STORAGE_KEY = "padraig-theme-config";
+
+const getThemeConfig = () => {
+    try {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY);
+        return stored ? JSON.parse(stored) : {
+            toolbarButtonColor: BRAND_COLORS.primary,
+            toolbarButtonHoverColor: BRAND_COLORS.primaryDark,
+            accentColor: BRAND_COLORS.accent1,
+            enableCustomColors: true
+        };
+    } catch {
+        return {
+            toolbarButtonColor: BRAND_COLORS.primary,
+            toolbarButtonHoverColor: BRAND_COLORS.primaryDark,
+            accentColor: BRAND_COLORS.accent1,
+            enableCustomColors: true
+        };
+    }
+};
+
+const saveThemeConfig = (config: any) => {
+    localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(config));
+};
+
 export default definePlugin({
     name: "CreateCoinFromTweet",
     description: "PadraigAIO",
@@ -58,6 +84,9 @@ export default definePlugin({
 
     start() {
         console.log("[PumpPortalPlugin] Starting enhanced unified plugin by Padraig (@PadraigTools)...");
+
+        // Apply original colors (remove any custom styling)
+        this.updateColors();
 
         // Show welcome popup on first launch
         this.showWelcomeIfFirstTime();
@@ -131,9 +160,9 @@ export default definePlugin({
                 walletBtn.className = "pump-persistent-button";
                 walletBtn.textContent = "💼 Wallets";
                 walletBtn.style.cssText = `
-                    background: linear-gradient(135deg, ${BRAND_COLORS.charcoal}, ${BRAND_COLORS.charcoal}dd);
+                    background: linear-gradient(135deg, ${BRAND_COLORS.primary}, ${BRAND_COLORS.primary}dd);
                     color: #fff;
-                    border: none;
+                    border: 2px solid ${BRAND_COLORS.success};
                     border-radius: 6px;
                     padding: 6px 12px;
                     font-size: 12px;
@@ -146,13 +175,13 @@ export default definePlugin({
                 walletBtn.addEventListener("mouseenter", () => {
                     walletBtn.style.transform = "translateY(-1px)";
                     walletBtn.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
-                    walletBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.charcoal}ee, ${BRAND_COLORS.charcoal}cc)`;
+                    walletBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.primary}ee, ${BRAND_COLORS.primary}cc)`;
                 });
 
                 walletBtn.addEventListener("mouseleave", () => {
                     walletBtn.style.transform = "translateY(0)";
                     walletBtn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-                    walletBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.charcoal}, ${BRAND_COLORS.charcoal}dd)`;
+                    walletBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.primary}, ${BRAND_COLORS.primary}dd)`;
                 });
 
                 walletBtn.onclick = () => {
@@ -167,9 +196,9 @@ export default definePlugin({
                 coinBtn.className = "pump-persistent-button";
                 coinBtn.textContent = "🚀Create";
                 coinBtn.style.cssText = `
-                    background: linear-gradient(135deg, ${BRAND_COLORS.accent2}, ${BRAND_COLORS.accent2}dd);
+                    background: linear-gradient(135deg, ${BRAND_COLORS.primary}, ${BRAND_COLORS.primary}dd);
                     color: #fff;
-                    border: none;
+                    border: 2px solid ${BRAND_COLORS.accent2};
                     border-radius: 6px;
                     padding: 6px 12px;
                     font-size: 12px;
@@ -182,13 +211,13 @@ export default definePlugin({
                 coinBtn.addEventListener("mouseenter", () => {
                     coinBtn.style.transform = "translateY(-1px)";
                     coinBtn.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
-                    coinBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.accent2}ee, ${BRAND_COLORS.accent2}cc)`;
+                    coinBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.primary}ee, ${BRAND_COLORS.primary}cc)`;
                 });
 
                 coinBtn.addEventListener("mouseleave", () => {
                     coinBtn.style.transform = "translateY(0)";
                     coinBtn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-                    coinBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.accent2}, ${BRAND_COLORS.accent2}dd)`;
+                    coinBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.primary}, ${BRAND_COLORS.primary}dd)`;
                 });
 
                 coinBtn.onclick = async () => {
@@ -206,9 +235,9 @@ export default definePlugin({
                 tradeBtn.className = "pump-persistent-button";
                 tradeBtn.textContent = "📊Trade";
                 tradeBtn.style.cssText = `
-                    background: linear-gradient(135deg, ${BRAND_COLORS.accent3}, ${BRAND_COLORS.accent3}dd);
+                    background: linear-gradient(135deg, ${BRAND_COLORS.primary}, ${BRAND_COLORS.primary}dd);
                     color: #fff;
-                    border: none;
+                    border: 2px solid #9F7AEA;
                     border-radius: 6px;
                     padding: 6px 12px;
                     font-size: 12px;
@@ -221,13 +250,13 @@ export default definePlugin({
                 tradeBtn.addEventListener("mouseenter", () => {
                     tradeBtn.style.transform = "translateY(-1px)";
                     tradeBtn.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
-                    tradeBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.accent3}ee, ${BRAND_COLORS.accent3}cc)`;
+                    tradeBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.primary}ee, ${BRAND_COLORS.primary}cc)`;
                 });
 
                 tradeBtn.addEventListener("mouseleave", () => {
                     tradeBtn.style.transform = "translateY(0)";
                     tradeBtn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-                    tradeBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.accent3}, ${BRAND_COLORS.accent3}dd)`;
+                    tradeBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.primary}, ${BRAND_COLORS.primary}dd)`;
                 });
 
                 tradeBtn.onclick = () => {
@@ -242,9 +271,9 @@ export default definePlugin({
                 settingsBtn.className = "pump-persistent-button";
                 settingsBtn.textContent = "⚙️";
                 settingsBtn.style.cssText = `
-                    background: linear-gradient(135deg, ${BRAND_COLORS.accent1}, ${BRAND_COLORS.accent1}dd);
+                    background: linear-gradient(135deg, ${BRAND_COLORS.primary}, ${BRAND_COLORS.primary}dd);
                     color: #fff;
-                    border: none;
+                    border: 2px solid ${BRAND_COLORS.accent1};
                     border-radius: 6px;
                     padding: 6px 12px;
                     font-size: 12px;
@@ -257,13 +286,13 @@ export default definePlugin({
                 settingsBtn.addEventListener("mouseenter", () => {
                     settingsBtn.style.transform = "translateY(-1px)";
                     settingsBtn.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
-                    settingsBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.accent1}ee, ${BRAND_COLORS.accent1}cc)`;
+                    settingsBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.primary}ee, ${BRAND_COLORS.primary}cc)`;
                 });
 
                 settingsBtn.addEventListener("mouseleave", () => {
                     settingsBtn.style.transform = "translateY(0)";
                     settingsBtn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-                    settingsBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.accent1}, ${BRAND_COLORS.accent1}dd)`;
+                    settingsBtn.style.background = `linear-gradient(135deg, ${BRAND_COLORS.primary}, ${BRAND_COLORS.primary}dd)`;
                 });
 
                 // Simple settings modal opening - just like the other buttons
@@ -545,62 +574,6 @@ export default definePlugin({
             console.log("[PumpPortalPlugin] LivePriceSidebar mounted successfully");
         } catch (error) {
             console.error("[PumpPortalPlugin] Error mounting LivePriceSidebar:", error);
-        }
-    },
-
-    // Add toggle button for LivePriceSidebar
-    addLivePriceSidebarToggle(toggleCallback: () => void) {
-        try {
-            // Find the branding container where other buttons are
-            const brandingContainer = document.querySelector(".padraig-branding");
-            if (brandingContainer) {
-                // Check if toggle button already exists
-                const existingToggle = brandingContainer.querySelector(".price-sidebar-toggle");
-                if (existingToggle) {
-                    existingToggle.remove();
-                }
-
-                // Create toggle button
-                const toggleBtn = document.createElement("button");
-                toggleBtn.className = "pump-persistent-button price-sidebar-toggle";
-                toggleBtn.textContent = "📊Prices";
-                toggleBtn.style.cssText = `
-                    background: linear-gradient(135deg, ${BRAND_COLORS.success}, ${BRAND_COLORS.success}dd);
-                    color: #fff;
-                    border: none;
-                    border-radius: 6px;
-                    padding: 6px 12px;
-                    font-size: 12px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                `;
-
-                // Add hover effects
-                toggleBtn.addEventListener("mouseenter", () => {
-                    toggleBtn.style.transform = "translateY(-1px)";
-                    toggleBtn.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
-                });
-
-                toggleBtn.addEventListener("mouseleave", () => {
-                    toggleBtn.style.transform = "translateY(0)";
-                    toggleBtn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-                });
-
-                // Add click handler
-                toggleBtn.onclick = toggleCallback;
-
-                // Add to branding container
-                const buttonContainer = brandingContainer.querySelector("div");
-                if (buttonContainer) {
-                    buttonContainer.appendChild(toggleBtn);
-                }
-
-                console.log("[PumpPortalPlugin] LivePriceSidebar toggle button added");
-            }
-        } catch (error) {
-            console.error("[PumpPortalPlugin] Error adding LivePriceSidebar toggle:", error);
         }
     },
 
@@ -1232,11 +1205,23 @@ export default definePlugin({
         }
     },
 
+    updateColors() {
+        // Remove custom styling - back to original
+        const style = document.getElementById("padraig-plugin-colors");
+        if (style) {
+            style.remove();
+        }
+    },
+
     stop() {
         console.log("[PumpPortalPlugin] Stopping enhanced plugin...");
 
         // Clean up UI elements
         document.querySelectorAll(".pump-button-inline, .pump-persistent-button, .padraig-branding").forEach(el => el.remove());
+
+        // Clean up custom styles
+        const customStyles = document.getElementById("padraig-plugin-colors");
+        if (customStyles) customStyles.remove();
 
         // Clean up ToastContainer
         const toastContainer = document.getElementById("padraig-toast-container");

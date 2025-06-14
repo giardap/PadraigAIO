@@ -2062,7 +2062,7 @@ Please check:
                 </div>
             </ModalContent>
 
-            <ModalFooter style={{ padding: "20px 24px", paddingTop: "0" }}>
+            <ModalFooter>
                 <button
                     onClick={executeTrade}
                     disabled={loading || !mintAddress || !amount || !selectedWalletObj?.apiKey}

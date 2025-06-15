@@ -12,6 +12,7 @@ import { addressDetector } from "./addressUtils";
 import { BuySellModal } from "./BuySellModal";
 import { CoinModal } from "./CoinModal";
 import { LivePriceSidebar } from "./LivePriceSidebar";
+import { PortfolioCommandCenter } from "./PortfolioCommandCenter";
 import { StandaloneTradingSettingsModal } from "./StandaloneTradingSettingsModal";
 import { storageManager } from "./storageHelper";
 import { ToastContainer } from "./ToastManager";
@@ -139,7 +140,29 @@ export default definePlugin({
                         width: 24px;
                         height: 24px;
                         border-radius: 4px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
                     `;
+                    
+                    // Add hover effects
+                    logo.onmouseenter = () => {
+                        logo.style.transform = "scale(1.1)";
+                        logo.style.boxShadow = "0 2px 8px rgba(0,0,0,0.2)";
+                    };
+                    
+                    logo.onmouseleave = () => {
+                        logo.style.transform = "scale(1)";
+                        logo.style.boxShadow = "none";
+                    };
+                    
+                    // Add click handler to open Portfolio Command Center
+                    logo.onclick = () => {
+                        openModal((props: any) => React.createElement(PortfolioCommandCenter, {
+                            ...props,
+                            debugInfoEnabled
+                        }));
+                    };
+                    
                     brandingContainer.appendChild(logo);
                 }
 

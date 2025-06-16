@@ -1202,7 +1202,10 @@ Please check:
                                     }}>
                                         <div style={{ fontSize: "10px", color: BRAND_COLORS.textMuted }}>Price</div>
                                         <div style={{ fontSize: "14px", fontWeight: "600", color: BRAND_COLORS.text }}>
-                                            {tokenMarketData.price ? `$${tokenMarketData.price.toFixed(8)}` : "N/A"}
+                                            {(() => {
+                                                const price = typeof tokenMarketData.price === 'string' ? parseFloat(tokenMarketData.price) : tokenMarketData.price;
+                                                return price && typeof price === 'number' && !isNaN(price) ? `$${price.toFixed(8)}` : "N/A";
+                                            })()}
                                         </div>
                                     </div>
                                     <div style={{

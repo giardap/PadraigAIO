@@ -369,19 +369,41 @@ class PumpStorageManager {
             const db = await this.openDB();
             const transaction = db.transaction(["tokenBalances"], "readonly");
             const store = transaction.objectStore("tokenBalances");
-            const index = store.index("walletAddress");
+            
+            // Check if the walletAddress index exists before using it
+            let indexExists = false;
+            try {
+                const index = store.index("walletAddress");
+                indexExists = true;
+            } catch (indexError) {
+                console.warn("[Storage] walletAddress index not found, using direct object store query");
+            }
 
             return new Promise((resolve, reject) => {
-                const request = index.getAll(walletAddress);
-                request.onsuccess = () => {
-                    const balances = request.result || [];
-                    // Filter out zero balances and sort by amount descending
-                    const filtered = balances
-                        .filter(b => b.uiAmount > 0)
-                        .sort((a, b) => b.uiAmount - a.uiAmount);
-                    resolve(filtered);
-                };
-                request.onerror = () => reject(request.error);
+                if (indexExists) {
+                    // Use index if it exists
+                    const index = store.index("walletAddress");
+                    const request = index.getAll(walletAddress);
+                    request.onsuccess = () => {
+                        const balances = request.result || [];
+                        const filtered = balances
+                            .filter(b => b.uiAmount > 0)
+                            .sort((a, b) => b.uiAmount - a.uiAmount);
+                        resolve(filtered);
+                    };
+                    request.onerror = () => reject(request.error);
+                } else {
+                    // Fallback: scan all records and filter manually
+                    const request = store.getAll();
+                    request.onsuccess = () => {
+                        const allBalances = request.result || [];
+                        const filtered = allBalances
+                            .filter(b => b.walletAddress === walletAddress && b.uiAmount > 0)
+                            .sort((a, b) => b.uiAmount - a.uiAmount);
+                        resolve(filtered);
+                    };
+                    request.onerror = () => reject(request.error);
+                }
             });
         } catch (error) {
             console.error("[Storage] Failed to get token balances:", error);

@@ -505,13 +505,26 @@ export default definePlugin({
             // Add to DOM
             document.body.appendChild(toastContainerDiv);
 
-            // Use createRoot (React 18+)
+            // Use createRoot (React 18+) with fallback to ReactDOM.render
             try {
-                const root = (ReactDOM as any).createRoot(toastContainerDiv);
-                root.render(ToastContainerElement);
-                this._toastRoot = root;
+                if ((ReactDOM as any).createRoot) {
+                    const root = (ReactDOM as any).createRoot(toastContainerDiv);
+                    root.render(ToastContainerElement);
+                    this._toastRoot = root;
+                } else {
+                    // Fallback to legacy ReactDOM.render for older React versions
+                    (ReactDOM as any).render(ToastContainerElement, toastContainerDiv);
+                    this._toastRoot = { render: (element: any) => (ReactDOM as any).render(element, toastContainerDiv) };
+                }
             } catch (error) {
                 console.error("[PumpPortalPlugin] Error creating React root for ToastContainer:", error);
+                // Final fallback - try legacy render
+                try {
+                    (ReactDOM as any).render(ToastContainerElement, toastContainerDiv);
+                    this._toastRoot = { render: (element: any) => (ReactDOM as any).render(element, toastContainerDiv) };
+                } catch (fallbackError) {
+                    console.error("[PumpPortalPlugin] Fallback render also failed:", fallbackError);
+                }
             }
 
             console.log("[PumpPortalPlugin] ToastContainer mounted successfully");
@@ -560,13 +573,26 @@ export default definePlugin({
             // Add to DOM
             document.body.appendChild(sidebarContainerDiv);
 
-            // Use createRoot (React 18+)
+            // Use createRoot (React 18+) with fallback to ReactDOM.render
             try {
-                const root = (ReactDOM as any).createRoot(sidebarContainerDiv);
-                root.render(LivePriceSidebarElement);
-                this._sidebarRoot = root;
+                if ((ReactDOM as any).createRoot) {
+                    const root = (ReactDOM as any).createRoot(sidebarContainerDiv);
+                    root.render(LivePriceSidebarElement);
+                    this._sidebarRoot = root;
+                } else {
+                    // Fallback to legacy ReactDOM.render for older React versions
+                    (ReactDOM as any).render(LivePriceSidebarElement, sidebarContainerDiv);
+                    this._sidebarRoot = { render: (element: any) => (ReactDOM as any).render(element, sidebarContainerDiv) };
+                }
             } catch (error) {
                 console.error("[PumpPortalPlugin] Error creating React root for LivePriceSidebar:", error);
+                // Final fallback - try legacy render
+                try {
+                    (ReactDOM as any).render(LivePriceSidebarElement, sidebarContainerDiv);
+                    this._sidebarRoot = { render: (element: any) => (ReactDOM as any).render(element, sidebarContainerDiv) };
+                } catch (fallbackError) {
+                    console.error("[PumpPortalPlugin] Fallback render also failed:", fallbackError);
+                }
             }
 
             // Add toggle button to existing UI
@@ -586,11 +612,24 @@ export default definePlugin({
                     this._sidebarRoot.render(newElement);
                 } else {
                     try {
-                        const root = (ReactDOM as any).createRoot(sidebarContainerDiv);
-                        root.render(newElement);
-                        this._sidebarRoot = root;
+                        if ((ReactDOM as any).createRoot) {
+                            const root = (ReactDOM as any).createRoot(sidebarContainerDiv);
+                            root.render(newElement);
+                            this._sidebarRoot = root;
+                        } else {
+                            // Fallback to legacy ReactDOM.render
+                            (ReactDOM as any).render(newElement, sidebarContainerDiv);
+                            this._sidebarRoot = { render: (element: any) => (ReactDOM as any).render(element, sidebarContainerDiv) };
+                        }
                     } catch (error) {
                         console.error("[PumpPortalPlugin] Error creating React root in toggle:", error);
+                        // Final fallback - try legacy render
+                        try {
+                            (ReactDOM as any).render(newElement, sidebarContainerDiv);
+                            this._sidebarRoot = { render: (element: any) => (ReactDOM as any).render(element, sidebarContainerDiv) };
+                        } catch (fallbackError) {
+                            console.error("[PumpPortalPlugin] Fallback render in toggle also failed:", fallbackError);
+                        }
                     }
                 }
             });
@@ -629,13 +668,26 @@ export default definePlugin({
             // Add to DOM
             document.body.appendChild(statusContainerDiv);
 
-            // Use createRoot (React 18+)
+            // Use createRoot (React 18+) with fallback to ReactDOM.render
             try {
-                const root = (ReactDOM as any).createRoot(statusContainerDiv);
-                root.render(SniperStatusElement);
-                this._sniperStatusRoot = root;
+                if ((ReactDOM as any).createRoot) {
+                    const root = (ReactDOM as any).createRoot(statusContainerDiv);
+                    root.render(SniperStatusElement);
+                    this._sniperStatusRoot = root;
+                } else {
+                    // Fallback to legacy ReactDOM.render for older React versions
+                    (ReactDOM as any).render(SniperStatusElement, statusContainerDiv);
+                    this._sniperStatusRoot = { render: (element: any) => (ReactDOM as any).render(element, statusContainerDiv) };
+                }
             } catch (error) {
                 console.error("[PumpPortalPlugin] Error creating React root for SniperStatus:", error);
+                // Final fallback - try legacy render
+                try {
+                    (ReactDOM as any).render(SniperStatusElement, statusContainerDiv);
+                    this._sniperStatusRoot = { render: (element: any) => (ReactDOM as any).render(element, statusContainerDiv) };
+                } catch (fallbackError) {
+                    console.error("[PumpPortalPlugin] Fallback render also failed:", fallbackError);
+                }
             }
 
             console.log("[PumpPortalPlugin] SniperStatus mounted successfully");

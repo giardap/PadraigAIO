@@ -76,6 +76,7 @@ export function PortfolioCommandCenter({ transitionState }: PortfolioCommandCent
     const [solBalances, setSolBalances] = React.useState<Record<string, number>>({});
     const [loading, setLoading] = React.useState(true);
     const [checkingStatus, setCheckingStatus] = React.useState(false);
+    const [lastStatusCheck, setLastStatusCheck] = React.useState(0);
 
     // SOL balance fetching function (same as WalletModal)
     const fetchSolBalance = async (publicKey: string): Promise<number> => {
@@ -171,6 +172,13 @@ export function PortfolioCommandCenter({ transitionState }: PortfolioCommandCent
 
     // Check and update pending coin statuses
     const updatePendingCoinStatuses = async () => {
+        // Rate limiting: don't check more than once every 10 seconds
+        const now = Date.now();
+        if (now - lastStatusCheck < 10000) {
+            console.log("[PortfolioCC] Rate limited: skipping status check");
+            return;
+        }
+        
         const pendingCoins = createdCoins.filter(coin => coin.status === "pending" && coin.transactionSignature);
         
         if (pendingCoins.length === 0) {
@@ -179,6 +187,7 @@ export function PortfolioCommandCenter({ transitionState }: PortfolioCommandCent
         }
         
         setCheckingStatus(true);
+        setLastStatusCheck(now);
         console.log(`[PortfolioCC] Checking status for ${pendingCoins.length} pending coins...`);
         
         let updatesCount = 0;
@@ -255,8 +264,11 @@ export function PortfolioCommandCenter({ transitionState }: PortfolioCommandCent
                 setHoldings(allHoldings);
                 setSolBalances(solBalanceMap);
                 
-                // Check for pending coin status updates
-                setTimeout(updatePendingCoinStatuses, 1000); // Check after a brief delay
+                // Check for pending coin status updates (only if there are pending coins)
+                const hasPendingCoins = coinsData.some(coin => coin.status === "pending" && coin.transactionSignature);
+                if (hasPendingCoins) {
+                    setTimeout(updatePendingCoinStatuses, 2000); // Check after a brief delay
+                }
             } catch (error) {
                 console.error("Failed to load portfolio data:", error);
             } finally {

@@ -6,7 +6,7 @@
 
 import { ModalContent, ModalHeader, ModalRoot } from "@utils/modal";
 import { React } from "@webpack/common";
-import { getStoredWallets, getCreatedCoins, getStoredTokenBalances, getPortfolioSummary, updateCreatedCoinStatus, type Wallet, type CreatedCoin, type TokenBalance } from "./storageHelper";
+import { getStoredWallets, getCreatedCoins, getStoredTokenBalances, fetchTokenBalances, getPortfolioSummary, updateCreatedCoinStatus, type Wallet, type CreatedCoin, type TokenBalance } from "./storageHelper";
 
 // Brand colors matching other modals
 const BRAND_COLORS = {
@@ -220,6 +220,61 @@ export function PortfolioCommandCenter({ transitionState }: PortfolioCommandCent
         setCheckingStatus(false);
     };
 
+    // Manual refresh function for portfolio data
+    const refreshPortfolioData = async () => {
+        try {
+            setLoading(true);
+            console.log("[PortfolioCC] Manual refresh triggered");
+            
+            const [walletsData, coinsData, summaryData] = await Promise.all([
+                getStoredWallets(),
+                getCreatedCoins(),
+                getPortfolioSummary()
+            ]);
+
+            setWallets(walletsData);
+            setCreatedCoins(coinsData);
+            setPortfolioSummary(summaryData);
+
+            // Force fresh token balance and SOL balance fetching for all wallets
+            const allHoldings: TokenBalance[] = [];
+            const solBalanceMap: Record<string, number> = {};
+            
+            for (const wallet of walletsData) {
+                if (wallet.publicKey) {
+                    try {
+                        // Force fresh token balance fetch
+                        console.log(`[PortfolioCC] Force refreshing token balances for ${wallet.name}...`);
+                        const balances = await fetchTokenBalances(wallet.publicKey, wallet.id);
+                        allHoldings.push(...balances);
+                        console.log(`[PortfolioCC] Refreshed ${balances.length} token balances for ${wallet.name}`);
+                    } catch (error) {
+                        console.warn("Failed to refresh token balances for wallet:", wallet.name, error);
+                    }
+                    
+                    try {
+                        // Force fresh SOL balance fetch
+                        const solBalance = await fetchSolBalance(wallet.publicKey);
+                        solBalanceMap[wallet.id] = solBalance;
+                        console.log(`[PortfolioCC] Refreshed SOL balance for ${wallet.name}: ${solBalance} SOL`);
+                    } catch (error) {
+                        console.warn("Failed to refresh SOL balance for wallet:", wallet.name, error);
+                        solBalanceMap[wallet.id] = 0;
+                    }
+                }
+            }
+            
+            setHoldings(allHoldings);
+            setSolBalances(solBalanceMap);
+            
+            console.log("[PortfolioCC] Manual refresh completed successfully");
+        } catch (error) {
+            console.error("[PortfolioCC] Manual refresh failed:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Load real data on component mount
     React.useEffect(() => {
         const loadPortfolioData = async () => {
@@ -242,11 +297,22 @@ export function PortfolioCommandCenter({ transitionState }: PortfolioCommandCent
                 for (const wallet of walletsData) {
                     if (wallet.publicKey) {
                         try {
-                            // Load token balances
-                            const balances = await getStoredTokenBalances(wallet.publicKey);
+                            // Load cached token balances first
+                            let balances = await getStoredTokenBalances(wallet.publicKey);
+                            
+                            // If no cached balances or cache is old (>5 minutes), fetch fresh data
+                            if (balances.length === 0 || 
+                                (balances[0] && new Date().getTime() - new Date(balances[0].lastUpdated).getTime() > 5 * 60 * 1000)) {
+                                console.log(`[PortfolioCC] Fetching fresh token balances for ${wallet.name}...`);
+                                balances = await fetchTokenBalances(wallet.publicKey, wallet.id);
+                                console.log(`[PortfolioCC] Loaded ${balances.length} token balances for ${wallet.name}`);
+                            } else {
+                                console.log(`[PortfolioCC] Using cached token balances for ${wallet.name}: ${balances.length} tokens`);
+                            }
+                            
                             allHoldings.push(...balances);
                         } catch (error) {
-                            console.warn("Failed to load token balances for wallet:", wallet.name, "- this is normal if no token balances have been stored yet");
+                            console.warn("Failed to load token balances for wallet:", wallet.name, error);
                         }
                         
                         try {
@@ -354,7 +420,7 @@ export function PortfolioCommandCenter({ transitionState }: PortfolioCommandCent
                         />
                     </div>
 
-                    <div>
+                    <div style={{ flex: 1 }}>
                         <h2 style={{
                             margin: 0,
                             fontSize: "20px",
@@ -371,6 +437,24 @@ export function PortfolioCommandCenter({ transitionState }: PortfolioCommandCent
                             Real-time portfolio analytics and performance tracking
                         </p>
                     </div>
+                    
+                    <button 
+                        onClick={refreshPortfolioData}
+                        style={{
+                            padding: "8px 16px",
+                            backgroundColor: BRAND_COLORS.accent3,
+                            color: "white",
+                            border: "none",
+                            borderRadius: "6px",
+                            fontSize: "14px",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px"
+                        }}
+                    >
+                        🔄 Refresh
+                    </button>
                 </div>
             </ModalHeader>
 

@@ -6,7 +6,7 @@
 
 import { ModalContent, ModalHeader, ModalRoot } from "@utils/modal";
 import { React } from "@webpack/common";
-import { getStoredWallets, getCreatedCoins, getStoredTokenBalances, getPortfolioSummary, type Wallet, type CreatedCoin, type TokenBalance } from "./storageHelper";
+import { getStoredWallets, getCreatedCoins, getStoredTokenBalances, getPortfolioSummary, updateCreatedCoinStatus, type Wallet, type CreatedCoin, type TokenBalance } from "./storageHelper";
 
 // Brand colors matching other modals
 const BRAND_COLORS = {
@@ -73,7 +73,143 @@ export function PortfolioCommandCenter({ transitionState }: PortfolioCommandCent
         pendingCoins: 0,
         confirmedCoins: 0
     });
+    const [solBalances, setSolBalances] = React.useState<Record<string, number>>({});
     const [loading, setLoading] = React.useState(true);
+    const [checkingStatus, setCheckingStatus] = React.useState(false);
+
+    // SOL balance fetching function (same as WalletModal)
+    const fetchSolBalance = async (publicKey: string): Promise<number> => {
+        try {
+            const response = await fetch("https://rpc.helius.xyz/?api-key=e3b54e60-daee-442f-8b75-1893c5be291f", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 1,
+                    method: "getBalance",
+                    params: [publicKey]
+                })
+            });
+
+            const data = await response.json();
+            if (data.result && typeof data.result.value === "number") {
+                return data.result.value / 1e9; // Convert lamports to SOL
+            }
+            return 0;
+        } catch (error) {
+            console.error("[PortfolioCC] Failed to fetch SOL balance for", publicKey, error);
+            return 0;
+        }
+    };
+
+    // Transaction confirmation checking function
+    const checkTransactionStatus = async (signature: string): Promise<{ confirmed: boolean; contractAddress?: string }> => {
+        try {
+            const response = await fetch("https://rpc.helius.xyz/?api-key=e3b54e60-daee-442f-8b75-1893c5be291f", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 1,
+                    method: "getTransaction",
+                    params: [
+                        signature,
+                        {
+                            encoding: "json",
+                            commitment: "confirmed",
+                            maxSupportedTransactionVersion: 0
+                        }
+                    ]
+                })
+            });
+
+            const data = await response.json();
+            if (data.result && data.result.meta && !data.result.meta.err) {
+                // Transaction confirmed successfully
+                let contractAddress = null;
+                
+                // Try to extract contract address from transaction logs
+                if (data.result.meta.logMessages) {
+                    for (const log of data.result.meta.logMessages) {
+                        if (log.includes("Program") && log.includes("invoke")) {
+                            // This is a simplified extraction - the actual mint address might be in postTokenBalances
+                            break;
+                        }
+                    }
+                }
+                
+                // Try to get contract address from postTokenBalances
+                if (data.result.meta.postTokenBalances && data.result.meta.postTokenBalances.length > 0) {
+                    const newToken = data.result.meta.postTokenBalances.find((balance: any) => 
+                        !data.result.meta.preTokenBalances?.some((preBalance: any) => preBalance.mint === balance.mint)
+                    );
+                    if (newToken) {
+                        contractAddress = newToken.mint;
+                    }
+                }
+                
+                return { confirmed: true, contractAddress: contractAddress || undefined };
+            } else if (data.result === null) {
+                // Transaction not found or not confirmed yet
+                return { confirmed: false };
+            } else if (data.result.meta.err) {
+                // Transaction failed
+                console.log("[PortfolioCC] Transaction failed:", signature, data.result.meta.err);
+                return { confirmed: false };
+            }
+            
+            return { confirmed: false };
+        } catch (error) {
+            console.error("[PortfolioCC] Failed to check transaction status for", signature, error);
+            return { confirmed: false };
+        }
+    };
+
+    // Check and update pending coin statuses
+    const updatePendingCoinStatuses = async () => {
+        const pendingCoins = createdCoins.filter(coin => coin.status === "pending" && coin.transactionSignature);
+        
+        if (pendingCoins.length === 0) {
+            console.log("[PortfolioCC] No pending coins to check");
+            return;
+        }
+        
+        setCheckingStatus(true);
+        console.log(`[PortfolioCC] Checking status for ${pendingCoins.length} pending coins...`);
+        
+        let updatesCount = 0;
+        
+        for (const coin of pendingCoins) {
+            try {
+                const { confirmed, contractAddress } = await checkTransactionStatus(coin.transactionSignature);
+                
+                if (confirmed) {
+                    console.log(`[PortfolioCC] Coin ${coin.name} confirmed! Contract: ${contractAddress}`);
+                    await updateCreatedCoinStatus(coin.id, "confirmed", contractAddress || undefined);
+                    updatesCount++;
+                }
+            } catch (error) {
+                console.error(`[PortfolioCC] Failed to update status for coin ${coin.name}:`, error);
+            }
+        }
+        
+        // Reload the coins data to reflect updates
+        if (updatesCount > 0) {
+            console.log(`[PortfolioCC] Updated ${updatesCount} coins to confirmed status`);
+            const updatedCoins = await getCreatedCoins();
+            setCreatedCoins(updatedCoins);
+            
+            // Update portfolio summary
+            const updatedSummary = await getPortfolioSummary();
+            setPortfolioSummary(updatedSummary);
+        }
+        
+        setCheckingStatus(false);
+    };
 
     // Load real data on component mount
     React.useEffect(() => {
@@ -90,20 +226,37 @@ export function PortfolioCommandCenter({ transitionState }: PortfolioCommandCent
                 setCreatedCoins(coinsData);
                 setPortfolioSummary(summaryData);
 
-                // Load token holdings for all wallets
+                // Load token holdings and SOL balances for all wallets
                 const allHoldings: TokenBalance[] = [];
+                const solBalanceMap: Record<string, number> = {};
+                
                 for (const wallet of walletsData) {
                     if (wallet.publicKey) {
                         try {
+                            // Load token balances
                             const balances = await getStoredTokenBalances(wallet.publicKey);
                             allHoldings.push(...balances);
                         } catch (error) {
-                            console.warn("Failed to load balances for wallet:", wallet.name, "- this is normal if no token balances have been stored yet");
-                            // Don't break the loading process
+                            console.warn("Failed to load token balances for wallet:", wallet.name, "- this is normal if no token balances have been stored yet");
+                        }
+                        
+                        try {
+                            // Load SOL balance
+                            const solBalance = await fetchSolBalance(wallet.publicKey);
+                            solBalanceMap[wallet.id] = solBalance;
+                            console.log(`[PortfolioCC] Loaded SOL balance for ${wallet.name}: ${solBalance} SOL`);
+                        } catch (error) {
+                            console.warn("Failed to load SOL balance for wallet:", wallet.name, error);
+                            solBalanceMap[wallet.id] = 0;
                         }
                     }
                 }
+                
                 setHoldings(allHoldings);
+                setSolBalances(solBalanceMap);
+                
+                // Check for pending coin status updates
+                setTimeout(updatePendingCoinStatuses, 1000); // Check after a brief delay
             } catch (error) {
                 console.error("Failed to load portfolio data:", error);
             } finally {
@@ -114,9 +267,12 @@ export function PortfolioCommandCenter({ transitionState }: PortfolioCommandCent
         loadPortfolioData();
     }, []);
 
-    // Calculate portfolio metrics from real data
+    // Calculate portfolio metrics from real data (including SOL balances)
+    const totalSolValue = Object.values(solBalances).reduce((sum, balance) => sum + balance, 0);
+    const totalTokenValue = holdings.reduce((sum, h) => sum + ((h.uiAmount || 0) * 0.001), 0); // Rough estimate for tokens
+    
     const portfolioMetrics: PortfolioMetrics = {
-        totalValue: holdings.reduce((sum, h) => sum + (h.uiAmount * 0.001), 0), // Rough estimate
+        totalValue: totalSolValue + totalTokenValue, // Real SOL + estimated token value
         totalPnL: 0, // Would need historical data
         totalPnLPercentage: 0,
         dayPnL: 0,
@@ -274,11 +430,11 @@ export function PortfolioCommandCenter({ transitionState }: PortfolioCommandCent
                                     <div style={{ fontSize: "24px", fontWeight: "700", color: BRAND_COLORS.veryLightText }}>
                                         {formatSOL(portfolioMetrics.totalValue)}
                                     </div>
-                                    <div style={{
-                                        fontSize: "12px",
-                                        color: portfolioMetrics.totalPnL >= 0 ? BRAND_COLORS.success : BRAND_COLORS.danger
+                                    <div style={{ 
+                                        fontSize: "12px", 
+                                        color: BRAND_COLORS.lightText
                                     }}>
-                                        {formatPercentage(portfolioMetrics.totalPnLPercentage)} All Time
+                                        {formatSOL(totalSolValue)} SOL + {formatSOL(totalTokenValue)} Tokens
                                     </div>
                                 </div>
 
@@ -523,14 +679,78 @@ export function PortfolioCommandCenter({ transitionState }: PortfolioCommandCent
                                     </div>
                                 )}
                             </div>
+                            
+                            {/* SOL Balances Section */}
+                            <h3 style={{ margin: "30px 0 20px 0", fontSize: "18px", fontWeight: "600", color: BRAND_COLORS.veryLightText }}>
+                                💰 SOL Balances ({wallets.length} wallets)
+                            </h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                {wallets.length > 0 ? wallets.map((wallet) => (
+                                    <div key={wallet.id} style={{
+                                        background: "var(--background-secondary)",
+                                        padding: "16px",
+                                        borderRadius: "12px",
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center"
+                                    }}>
+                                        <div>
+                                            <div style={{ fontWeight: "600", fontSize: "16px", marginBottom: "4px", color: BRAND_COLORS.veryLightText }}>
+                                                {wallet.name}
+                                            </div>
+                                            <div style={{ fontSize: "14px", color: BRAND_COLORS.lightText }}>
+                                                {wallet.publicKey ? wallet.publicKey.substring(0, 8) + "..." : "No Public Key"}
+                                            </div>
+                                        </div>
+                                        <div style={{ textAlign: "right" }}>
+                                            <div style={{ fontWeight: "600", fontSize: "16px", marginBottom: "4px", color: BRAND_COLORS.veryLightText }}>
+                                                {formatSOL(solBalances[wallet.id] || 0)}
+                                            </div>
+                                            <div style={{
+                                                fontSize: "14px",
+                                                color: BRAND_COLORS.lightText
+                                            }}>
+                                                SOL Balance
+                                            </div>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div style={{
+                                        textAlign: "center",
+                                        padding: "40px",
+                                        color: BRAND_COLORS.lightText
+                                    }}>
+                                        No wallets found. Add wallets to see SOL balances.
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
                     {!loading && selectedTab === "trades" && (
                         <div>
-                            <h3 style={{ margin: "0 0 20px 0", fontSize: "18px", fontWeight: "600", color: BRAND_COLORS.veryLightText }}>
-                                🔄 Coin Creation History ({createdCoins.length})
-                            </h3>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: BRAND_COLORS.veryLightText }}>
+                                    🔄 Coin Creation History ({createdCoins.length})
+                                </h3>
+                                <button
+                                    onClick={updatePendingCoinStatuses}
+                                    disabled={checkingStatus}
+                                    style={{
+                                        padding: "8px 12px",
+                                        background: checkingStatus ? BRAND_COLORS.charcoal : BRAND_COLORS.accent2,
+                                        border: "none",
+                                        borderRadius: "6px",
+                                        color: "white",
+                                        cursor: checkingStatus ? "not-allowed" : "pointer",
+                                        fontSize: "12px",
+                                        fontWeight: "500",
+                                        opacity: checkingStatus ? 0.7 : 1
+                                    }}
+                                >
+                                    {checkingStatus ? "⏳ Checking..." : "🔄 Check Status"}
+                                </button>
+                            </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                 {createdCoins.length > 0 ? createdCoins.map((coin) => (
                                     <div key={coin.id} style={{
